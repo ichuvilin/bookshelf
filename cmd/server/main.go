@@ -2,15 +2,25 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/bookshelf/monolith/internal/config"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 )
 
 func main() {
 	cfg := config.Load()
+
+	db, err := sqlx.Connect("postgres", cfg.DatabaseURL)
+	if err != nil {
+		log.Fatal("error during connect to database", err)
+	}
+	defer db.Close()
+	log.Println("Connected to database")
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
@@ -22,7 +32,7 @@ func main() {
 		w.Write([]byte("{\"status\": \"ok\"}"))
 	})
 
-	err := http.ListenAndServe(cfg.Port, r)
+	err = http.ListenAndServe(cfg.Port, r)
 	if err != nil {
 		fmt.Printf("error starting server: %v\n", err)
 	}

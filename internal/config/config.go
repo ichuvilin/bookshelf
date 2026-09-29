@@ -18,7 +18,7 @@ func Load() *Config {
 	}
 	dbUrl := os.Getenv("DATABASE_URL")
 	if dbUrl == "" {
-		dbUrl = "host=localhost port=5432 user=postgres password=root dbname=postgres sslmode=disable"
+		dbUrl = "postgres://postgres:postgres@localhost:5432/bookshelf?sslmode=disable"
 	}
 
 	jwtSecret := os.Getenv("JWT_SECRET")
