@@ -46,7 +46,8 @@ type AuthResponse struct {
 }
 
 type UpdateUserRequest struct {
-	Username string `json:"username,omitempty"`
+	ID       uuid.UUID `json:"id"`
+	Username string    `json:"username,omitempty"`
 }
 
 func (u *User) ToPublic() UserPublic {
