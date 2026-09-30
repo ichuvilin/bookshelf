@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/bookshelf/monolith/internal/config"
+	"github.com/bookshelf/monolith/internal/repository"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/jmoiron/sqlx"
@@ -20,6 +21,9 @@ func main() {
 		log.Fatal("error during connect to database", err)
 	}
 	defer db.Close()
+
+	_ = repository.New(db)
+
 	log.Println("Connected to database")
 
 	r := chi.NewRouter()

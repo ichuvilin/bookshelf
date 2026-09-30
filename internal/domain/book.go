@@ -41,9 +41,11 @@ type CreateBookRequest struct {
 	Description   *string `json:"description"`
 	ISBN          *int32  `json:"isbn"`
 	PublishedYear *int32  `json:"published_year"`
+	CreateBy      string  `json:"create_by"`
 }
 
 type UpdateBookRequest struct {
+	ID            string  `json:"id" db:"id"`
 	Title         *string `json:"title" db:"title"`
 	Description   *string `json:"description" db:"description"`
 	ISBN          *int32  `json:"ISBN" db:"isbn"`
