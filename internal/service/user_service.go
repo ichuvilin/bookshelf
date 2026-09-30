@@ -3,9 +3,12 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
+	"time"
 
 	"github.com/bookshelf/monolith/internal/domain"
 	"github.com/bookshelf/monolith/internal/repository"
+	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -54,10 +57,55 @@ func (s *UserService) Register(ctx context.Context, req domain.RegisterRequest) 
 		return nil, err
 	}
 
+	token, err := s.generateToken(user.ID.String())
+	if err != nil {
+		return nil, err
+	}
+
 	return &domain.AuthResponse{
-		AccessToken: "",
-		TokenType:   "",
-		ExpiresIn:   0,
+		AccessToken: token,
+		TokenType:   "Bearer",
+		ExpiresIn:   int(time.Hour.Seconds()),
 		User:        user.ToPublic(),
 	}, nil
+}
+func (s *UserService) generateToken(userID string) (string, error) {
+	claims := jwt.MapClaims{
+		"sub": userID,
+		"exp": time.Now().Add(time.Hour).Unix(),
+		"iat": time.Now().Unix(),
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	signedToken, err := token.SignedString([]byte(s.jwtSecret))
+	if err != nil {
+		return "", err
+	}
+
+	return signedToken, nil
+}
+
+func (s *UserService) ValidateToken(tokenString string) (string, error) {
+	token, err := jwt.Parse(
+		tokenString,
+		func(token *jwt.Token) (interface{}, error) {
+			if token.Method != jwt.SigningMethodHS256 {
+				return nil, fmt.Errorf("unexpected signing method: %v", token.Method.Alg())
+			}
+
+			return []byte(s.jwtSecret), nil
+		},
+	)
+	if err != nil {
+		return "", err
+	}
+
+	if !token.Valid {
+		return "", errors.New("invalid token")
+	}
+
+	subject, err := token.Claims.GetSubject()
+	if err != nil {
+		return "", err
+	}
+	return subject, nil
 }
