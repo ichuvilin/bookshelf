@@ -7,6 +7,7 @@ import (
 
 	"github.com/bookshelf/monolith/internal/config"
 	"github.com/bookshelf/monolith/internal/repository"
+	"github.com/bookshelf/monolith/internal/service"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/jmoiron/sqlx"
@@ -22,7 +23,8 @@ func main() {
 	}
 	defer db.Close()
 
-	_ = repository.New(db)
+	repos := repository.New(db)
+	_ = service.New(repos, cfg.JWTSecret)
 
 	log.Println("Connected to database")
 

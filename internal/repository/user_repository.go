@@ -19,8 +19,15 @@ type UserRepository struct {
 	db *sqlx.DB
 }
 
-func (r *UserRepository) Create(ctx context.Context, user domain.RegisterRequest) {
-	r.db.ExecContext(ctx, "INSERT INTO users (id, username, email, password_hash)  VALUES ($1, $2, $3, $4)", uuid.New(), user.Username, user.Email, user.Password)
+func (r *UserRepository) Create(ctx context.Context, user domain.RegisterRequest) (*domain.User, error) {
+	var createdUser *domain.User
+
+	err := r.db.GetContext(ctx, &createdUser, "INSERT INTO users (id, username, email, password_hash)  VALUES ($1, $2, $3, $4) RETURNING *", uuid.New(), user.Username, user.Email, user.Password)
+	if err != nil {
+		return nil, err
+	}
+
+	return createdUser, nil
 }
 
 func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (domain.UserSummary, error) {
