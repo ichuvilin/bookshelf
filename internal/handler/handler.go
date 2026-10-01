@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/bookshelf/monolith/internal/domain"
@@ -77,5 +78,53 @@ func (h *Handler) Ready(w http.ResponseWriter, r *http.Request) {
 		"checks": map[string]string{
 			"database": "ok",
 		},
+	})
+}
+
+func (h *Handler) AuthMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		auth := r.Header.Get("Authorization")
+
+		if auth == "" {
+			writeError(
+				w,
+				r,
+				http.StatusUnauthorized,
+				"UNAUTHORIZED",
+				"Authorization header required",
+			)
+			return
+		}
+
+		parts := strings.Split(auth, " ")
+
+		if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
+			writeError(
+				w,
+				r,
+				http.StatusUnauthorized,
+				"UNAUTHORIZED",
+				"Invalid authorization header format",
+			)
+			return
+		}
+
+		token := parts[1]
+
+		userID, err := h.services.UserService.ValidateToken(token)
+		if err != nil {
+			writeError(
+				w,
+				r,
+				http.StatusUnauthorized,
+				"UNAUTHORIZED",
+				"Invalid or expired token",
+			)
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), userIDKey, userID)
+
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
