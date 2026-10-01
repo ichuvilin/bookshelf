@@ -42,8 +42,11 @@ func (r *UserRepository) GetByID(ctx context.Context, id string) (*domain.User, 
 
 func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
 	var user *domain.User
-	err := r.db.SelectContext(ctx, &user, "SELECT id, username, email, password_hash, created_at, updated_at FROM users WHERE email = $1", email)
-	if err != nil && errors.Is(err, sql.ErrNoRows) {
+	err := r.db.GetContext(ctx, &user, "SELECT * FROM users WHERE email = $1", email)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrUserNotFound
+		}
 		return nil, ErrUserNotFound
 	}
 	return user, nil

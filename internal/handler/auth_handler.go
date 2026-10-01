@@ -29,7 +29,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	var req domain.LoginRequest
 	err := decodeJSON(r, &req)
 	if err != nil {
-		writeError(w, r, http.StatusInternalServerError, "500", "Server error")
+		writeError(w, r, http.StatusInternalServerError, "500", err.Error())
 		return
 	}
 	response, err := h.services.UserService.Login(r.Context(), req)

@@ -18,7 +18,7 @@ func (h *Handler) ListBooks(w http.ResponseWriter, r *http.Request) {
 
 	page, err := strconv.Atoi(r.URL.Query().Get("page"))
 	if err != nil {
-		writeError(w, r, http.StatusBadRequest, "400", "Invalid request")
+		writeError(w, r, http.StatusBadRequest, "400", err.Error())
 		return
 	}
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
