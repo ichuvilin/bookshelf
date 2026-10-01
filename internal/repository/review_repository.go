@@ -16,10 +16,17 @@ type ReviewRepository struct {
 	db *sqlx.DB
 }
 
-func (r *ReviewRepository) Create(ctx context.Context, review domain.CreateReviewRequest) {
-	r.db.ExecContext(ctx, "INSERT INTO reviews (id, book_id, user_id, rating, title, content) VALUES ($1, $2, $3, $4, $5, $6)",
-		uuid.New(), review.BookID, review.UserID, review.Rating, review.Title, review.Content,
+func (r *ReviewRepository) Create(ctx context.Context, req domain.CreateReviewRequest) (*domain.Review, error) {
+	var review *domain.Review
+
+	err := r.db.SelectContext(ctx, &review, "INSERT INTO reviews (id, book_id, user_id, rating, title, content) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
+		uuid.New(), req.BookID, req.UserID, req.Rating, req.Title, req.Content,
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	return review, nil
 }
 
 func (r *ReviewRepository) GetByID(ctx context.Context, id string) (*domain.Review, error) {
@@ -95,7 +102,9 @@ func (r *ReviewRepository) ListByBookID(ctx context.Context, bookID string, page
 	return reviews, totalCount, nil
 }
 
-func (r *ReviewRepository) Update(ctx context.Context, review domain.UpdateReviewRequest) error {
+func (r *ReviewRepository) Update(ctx context.Context, req domain.UpdateReviewRequest) (*domain.Review, error) {
+	var review *domain.Review
+
 	const query = `
 		UPDATE reviews
 		SET
@@ -106,24 +115,15 @@ func (r *ReviewRepository) Update(ctx context.Context, review domain.UpdateRevie
 			title = COALESCE($5, title),
 			content = COALESCE($6, content)
 		WHERE id = $7
+		RETURNING *
 	`
 
-	result, err := r.db.ExecContext(ctx, query, review.Title, review.BookID, review.UserID, review.Rating, review.Title, review.Content, review.ID)
-
+	err := r.db.SelectContext(ctx, &review, query, req.Title, req.BookID, req.UserID, req.Rating, req.Title, req.Content, req.ID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	rows, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-
-	if rows == 0 {
-		return ErrReviewNotFound
-	}
-
-	return nil
+	return review, nil
 }
 
 func (r *ReviewRepository) Delete(ctx context.Context, id string) error {

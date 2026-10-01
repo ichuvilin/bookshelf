@@ -51,7 +51,7 @@ type ReviewListResponse struct {
 	Pagination Pagination
 }
 
-func (r *Review) ToResponse(user *User) ReviewResponse {
+func (r *Review) ToResponse(user *User) *ReviewResponse {
 	var title *string
 	if r.Title.Valid {
 		title = &r.Title.String
@@ -61,7 +61,7 @@ func (r *Review) ToResponse(user *User) ReviewResponse {
 		u = *user.ToSummary()
 	}
 
-	return ReviewResponse{
+	return &ReviewResponse{
 		ID:        r.ID,
 		BookID:    r.BookID,
 		UserID:    r.UserID,
