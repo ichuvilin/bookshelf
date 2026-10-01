@@ -31,13 +31,16 @@ func (r *UserRepository) Create(ctx context.Context, user domain.RegisterRequest
 }
 
 func (r *UserRepository) GetByID(ctx context.Context, id string) (*domain.User, error) {
-	var user *domain.User
-	err := r.db.SelectContext(ctx, &user, "SELECT id, username FROM users WHERE id = $1", id)
-	if err != nil && errors.Is(err, sql.ErrNoRows) {
-		return nil, ErrUserNotFound
+	var user domain.User
+	err := r.db.GetContext(ctx, &user, "SELECT id, username, email, password_hash, created_at, updated_at FROM users WHERE id = $1", id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrUserNotFound
+		}
+		return nil, err
 	}
 
-	return user, nil
+	return &user, nil
 }
 
 func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*domain.User, error) {

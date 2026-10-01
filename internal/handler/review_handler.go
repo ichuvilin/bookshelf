@@ -14,15 +14,24 @@ import (
 func (h *Handler) ListBookReviews(w http.ResponseWriter, r *http.Request) {
 	bookID := chi.URLParam(r, "bookId")
 
-	page, err := strconv.Atoi(r.URL.Query().Get("page"))
-	if err != nil {
-		writeError(w, r, http.StatusBadRequest, "400", "Invalid request")
-		return
+	page := 1
+	if value := r.URL.Query().Get("page"); value != "" {
+		var err error
+		page, err = strconv.Atoi(value)
+		if err != nil {
+			writeError(w, r, http.StatusBadRequest, "400", "Invalid page")
+			return
+		}
 	}
-	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
-	if err != nil {
-		writeError(w, r, http.StatusBadRequest, "400", "Invalid request")
-		return
+
+	limit := 10
+	if value := r.URL.Query().Get("limit"); value != "" {
+		var err error
+		limit, err = strconv.Atoi(value)
+		if err != nil {
+			writeError(w, r, http.StatusBadRequest, "400", "Invalid limit")
+			return
+		}
 	}
 
 	reviews, err := h.services.ReviewService.ListByBookID(r.Context(), bookID, page, limit)

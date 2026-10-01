@@ -9,6 +9,7 @@ import (
 
 	"github.com/bookshelf/monolith/internal/domain"
 	"github.com/bookshelf/monolith/internal/service"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 type contextKey string
@@ -39,7 +40,7 @@ func writeJSON(w http.ResponseWriter, status int, data interface{}) {
 func writeError(w http.ResponseWriter, r *http.Request, status int, code, message string) {
 	requestID := ""
 
-	if value := r.Context().Value("requestID"); value != nil {
+	if value := r.Context().Value(middleware.RequestIDKey); value != nil {
 		requestID, _ = value.(string)
 	}
 

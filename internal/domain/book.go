@@ -61,8 +61,8 @@ type BookFilter struct {
 }
 
 type BookListResponse struct {
-	Data       []BookResponse
-	Pagination Pagination
+	Data       []BookResponse `json:"data"`
+	Pagination Pagination     `json:"pagination"`
 }
 
 func (b *Book) ToResponse() *BookResponse {

@@ -16,15 +16,24 @@ func (h *Handler) ListBooks(w http.ResponseWriter, r *http.Request) {
 	sort := r.URL.Query().Get("sort")
 	order := r.URL.Query().Get("order")
 
-	page, err := strconv.Atoi(r.URL.Query().Get("page"))
-	if err != nil {
-		writeError(w, r, http.StatusBadRequest, "400", err.Error())
-		return
+	page := 1
+	if value := r.URL.Query().Get("page"); value != "" {
+		var err error
+		page, err = strconv.Atoi(value)
+		if err != nil {
+			writeError(w, r, http.StatusBadRequest, "400", "Invalid page")
+			return
+		}
 	}
-	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
-	if err != nil {
-		writeError(w, r, http.StatusBadRequest, "400", "Invalid request")
-		return
+
+	limit := 10
+	if value := r.URL.Query().Get("limit"); value != "" {
+		var err error
+		limit, err = strconv.Atoi(value)
+		if err != nil {
+			writeError(w, r, http.StatusBadRequest, "400", "Invalid limit")
+			return
+		}
 	}
 
 	filters := domain.BookFilter{

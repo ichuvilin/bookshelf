@@ -47,8 +47,8 @@ type UpdateReviewRequest struct {
 }
 
 type ReviewListResponse struct {
-	Data       []ReviewResponse
-	Pagination Pagination
+	Data       []ReviewResponse `json:"data"`
+	Pagination Pagination       `json:"pagination"`
 }
 
 func (r *Review) ToResponse(user *User) *ReviewResponse {

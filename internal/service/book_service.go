@@ -53,7 +53,7 @@ func (s *BookService) GetByID(ctx context.Context, id string) (*domain.BookRespo
 }
 
 func (s *BookService) List(ctx context.Context, filter domain.BookFilter) (*domain.BookListResponse, error) {
-	list, totalPages, err := s.bookRepo.List(ctx, filter)
+	list, totalCount, err := s.bookRepo.List(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -68,8 +68,8 @@ func (s *BookService) List(ctx context.Context, filter domain.BookFilter) (*doma
 		Pagination: domain.Pagination{
 			Page:       filter.Page,
 			Limit:      filter.Limit,
-			Total:      0,
-			TotalPages: totalPages,
+			Total:      totalCount,
+			TotalPages: (totalCount + filter.Limit - 1) / filter.Limit,
 		},
 	}, nil
 }

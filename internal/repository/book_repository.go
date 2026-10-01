@@ -29,7 +29,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7) returning *`, uuid.New(), req.Title, req.Aut
 }
 
 func (r *BookRepository) GetByID(ctx context.Context, id string) (*domain.Book, error) {
-	var book *domain.Book
+	var book domain.Book
 
 	query := `
 SELECT
@@ -50,12 +50,15 @@ WHERE b.id = $1
 group by b.id
 `
 
-	err := r.db.SelectContext(ctx, &book, query, id)
-	if err != nil && errors.Is(err, sql.ErrNoRows) {
-		return nil, ErrBookNotFound
+	err := r.db.GetContext(ctx, &book, query, id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrBookNotFound
+		}
+		return nil, err
 	}
 
-	return book, nil
+	return &book, nil
 }
 
 func (r *BookRepository) List(ctx context.Context, filter domain.BookFilter) ([]domain.Book, int, error) {
