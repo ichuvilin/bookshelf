@@ -69,6 +69,62 @@ func (s *UserService) Register(ctx context.Context, req domain.RegisterRequest) 
 		User:        user.ToPublic(),
 	}, nil
 }
+
+func (s *UserService) Login(ctx context.Context, req domain.LoginRequest) (*domain.AuthResponse, error) {
+	user, err := s.repo.GetByEmail(ctx, req.Email)
+	if err != nil && errors.Is(err, repository.ErrUserNotFound) {
+		return nil, ErrInvalidCredentials
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password))
+	if err != nil {
+		return nil, ErrInvalidCredentials
+	}
+
+	token, err := s.generateToken(user.ID.String())
+	if err != nil {
+		return nil, err
+	}
+
+	return &domain.AuthResponse{
+		AccessToken: token,
+		TokenType:   "Bearer",
+		ExpiresIn:   int(time.Hour.Seconds()),
+		User:        user.ToPublic(),
+	}, nil
+}
+
+func (s *UserService) GetByID(ctx context.Context, userID string) (*domain.User, error) {
+	return s.repo.GetByID(ctx, userID)
+}
+
+func (s *UserService) Update(ctx context.Context, userID string, req domain.UpdateUserRequest) (*domain.User, error) {
+	if req.Username == "" && len(req.Username) < 3 {
+		return nil, ErrInvalidUsername
+	}
+
+	_, err := s.repo.GetByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	existingUser, err := s.repo.GetByUsername(ctx, req.Username)
+	if err != nil && !errors.Is(err, repository.ErrUserNotFound) {
+		return nil, err
+	}
+	if existingUser != nil && existingUser.ID.String() != userID {
+		return nil, ErrUsernameExists
+	}
+	user, err := s.repo.Update(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
 func (s *UserService) generateToken(userID string) (string, error) {
 	claims := jwt.MapClaims{
 		"sub": userID,

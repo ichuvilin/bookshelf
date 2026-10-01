@@ -30,14 +30,14 @@ func (r *UserRepository) Create(ctx context.Context, user domain.RegisterRequest
 	return createdUser, nil
 }
 
-func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (domain.UserSummary, error) {
+func (r *UserRepository) GetByID(ctx context.Context, id string) (*domain.User, error) {
 	var user *domain.User
 	err := r.db.SelectContext(ctx, &user, "SELECT id, username FROM users WHERE id = $1", id)
 	if err != nil && errors.Is(err, sql.ErrNoRows) {
-		return domain.UserSummary{}, ErrUserNotFound
+		return nil, ErrUserNotFound
 	}
 
-	return user.ToSummary(), nil
+	return user, nil
 }
 
 func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
@@ -58,8 +58,15 @@ func (r *UserRepository) GetByUsername(ctx context.Context, username string) (*d
 	return user, nil
 }
 
-func (r *UserRepository) Update(ctx context.Context, user domain.UpdateUserRequest) {
-	r.db.ExecContext(ctx, "UPDATE users SET username = $1, updated_at = NOW() WHERE id = $2", user.Username, user.ID)
+func (r *UserRepository) Update(ctx context.Context, req domain.UpdateUserRequest) (*domain.User, error) {
+	var user *domain.User
+
+	err := r.db.GetContext(ctx, "&user, UPDATE users SET username = $1, updated_at = NOW() WHERE id = $2", req.Username, req.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
 }
 
 func (r *UserRepository) EmailExists(ctx context.Context, email string) bool {
