@@ -41,7 +41,6 @@ type CreateBookRequest struct {
 	Description   *string `json:"description"`
 	ISBN          *int32  `json:"isbn"`
 	PublishedYear *int32  `json:"published_year"`
-	CreateBy      string  `json:"create_by"`
 }
 
 type UpdateBookRequest struct {
@@ -66,7 +65,7 @@ type BookListResponse struct {
 	Pagination Pagination
 }
 
-func (b *Book) ToResponse() BookResponse {
+func (b *Book) ToResponse() *BookResponse {
 	var description *string
 	var isbn *string
 	var publishedYear *int32
@@ -84,7 +83,7 @@ func (b *Book) ToResponse() BookResponse {
 		averageRating = &b.AverageRating.Float64
 	}
 
-	return BookResponse{
+	return &BookResponse{
 		ID:            b.ID,
 		Title:         b.Title,
 		Description:   description,

@@ -18,9 +18,14 @@ type BookRepository struct {
 	db *sqlx.DB
 }
 
-func (r *BookRepository) Create(ctx context.Context, book domain.CreateBookRequest) {
-	r.db.ExecContext(ctx, `INSERT INTO books (id, title, author, description, isbn, published_year, created_by) 
-VALUES ($1, $2, $3, $4, $5, $6, $7)`, uuid.New(), book.Title, book.Author, book.Description, book.ISBN, book.PublishedYear, book.CreateBy)
+func (r *BookRepository) Create(ctx context.Context, userID string, req domain.CreateBookRequest) (*domain.Book, error) {
+	var book *domain.Book
+	err := r.db.SelectContext(ctx, &book, `INSERT INTO books (id, title, author, description, isbn, published_year, created_by) 
+VALUES ($1, $2, $3, $4, $5, $6, $7) returning *`, uuid.New(), req.Title, req.Author, req.Description, req.ISBN, req.PublishedYear, userID)
+	if err != nil {
+		return nil, err
+	}
+	return book, nil
 }
 
 func (r *BookRepository) GetByID(ctx context.Context, id string) (*domain.Book, error) {
@@ -157,7 +162,8 @@ func (r *BookRepository) List(ctx context.Context, filter domain.BookFilter) ([]
 	return books, totalCount, nil
 }
 
-func (r *BookRepository) Update(ctx context.Context, book domain.UpdateBookRequest) error {
+func (r *BookRepository) Update(ctx context.Context, req domain.UpdateBookRequest) (*domain.Book, error) {
+	var book *domain.Book
 	const query = `
 		UPDATE books
 		SET
@@ -167,32 +173,25 @@ func (r *BookRepository) Update(ctx context.Context, book domain.UpdateBookReque
 			author = COALESCE($4, author),
 			published_year = COALESCE($5, published_year)
 		WHERE id = $6
+		RETURNING *
 	`
 
-	result, err := r.db.ExecContext(
+	err := r.db.SelectContext(
 		ctx,
+		&book,
 		query,
-		book.Title,
-		book.Description,
-		book.ISBN,
-		book.Author,
-		book.PublishedYear,
-		book.ID,
+		req.Title,
+		req.Description,
+		req.ISBN,
+		req.Author,
+		req.PublishedYear,
+		req.ID,
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	rows, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-
-	if rows == 0 {
-		return ErrBookNotFound
-	}
-
-	return nil
+	return book, nil
 }
 
 func (r *BookRepository) Delete(ctx context.Context, id string) error {

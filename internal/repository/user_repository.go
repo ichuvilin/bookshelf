@@ -61,7 +61,7 @@ func (r *UserRepository) GetByUsername(ctx context.Context, username string) (*d
 func (r *UserRepository) Update(ctx context.Context, req domain.UpdateUserRequest) (*domain.User, error) {
 	var user *domain.User
 
-	err := r.db.GetContext(ctx, "&user, UPDATE users SET username = $1, updated_at = NOW() WHERE id = $2", req.Username, req.ID)
+	err := r.db.GetContext(ctx, &user, "UPDATE users SET username = $1, updated_at = NOW() WHERE id = $2", req.Username, req.ID)
 	if err != nil {
 		return nil, err
 	}

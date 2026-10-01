@@ -59,8 +59,8 @@ func (u *User) ToPublic() UserPublic {
 		UpdatedAt: u.UpdatedAt,
 	}
 }
-func (u *User) ToSummary() UserSummary {
-	return UserSummary{
+func (u *User) ToSummary() *UserSummary {
+	return &UserSummary{
 		ID:       u.ID,
 		Username: u.Username,
 	}

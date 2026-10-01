@@ -58,7 +58,7 @@ func (r *Review) ToResponse(user *User) ReviewResponse {
 	}
 	var u UserSummary
 	if user != nil {
-		u = user.ToSummary()
+		u = *user.ToSummary()
 	}
 
 	return ReviewResponse{
