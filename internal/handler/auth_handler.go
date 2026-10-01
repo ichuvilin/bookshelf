@@ -33,12 +33,12 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	response, err := h.services.UserService.Login(r.Context(), req)
-	if err != nil && errors.Is(err, service.ErrInvalidCredentials) {
-		writeError(w, r, http.StatusUnauthorized, "401", err.Error())
-		return
-	}
 	if err != nil {
-		writeError(w, r, http.StatusInternalServerError, "500", "Server error")
+		if errors.Is(err, service.ErrInvalidCredentials) {
+			writeError(w, r, http.StatusUnauthorized, "401", err.Error())
+			return
+		}
+		writeError(w, r, http.StatusInternalServerError, "500", err.Error())
 		return
 	}
 
