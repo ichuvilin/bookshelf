@@ -110,7 +110,3 @@ export function ReviewForm({ bookId, onSuccess }: ReviewFormProps) {
   );
 }
 
-
-
-
-

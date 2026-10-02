@@ -1,5 +1,5 @@
 {
-  "name": "bookshelf-frontend-p1",
+  "name": "bookshelf-frontend-p2",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -53,4 +53,3 @@
     "vite": "^5.4.8"
   }
 }
-

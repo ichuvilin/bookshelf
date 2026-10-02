@@ -39,7 +39,3 @@ export function BookGrid({ books, loading }: BookGridProps) {
   );
 }
 
-
-
-
-
