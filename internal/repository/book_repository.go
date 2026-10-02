@@ -45,7 +45,7 @@ SELECT
        count(r.*) as reviews_count,
        avg(r.rating) as average_rating
 FROM books b
-         JOIN reviews r ON b.id = r.book_id
+LEFT JOIN reviews r ON b.id = r.book_id
 WHERE b.id = $1
 group by b.id
 `

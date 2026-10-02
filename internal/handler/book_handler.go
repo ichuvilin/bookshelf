@@ -57,11 +57,11 @@ func (h *Handler) GetBook(w http.ResponseWriter, r *http.Request) {
 	bookID := chi.URLParam(r, "bookId")
 
 	book, err := h.services.BookService.GetByID(r.Context(), bookID)
-	if err != nil && errors.Is(err, repository.ErrBookNotFound) {
-		writeError(w, r, http.StatusNotFound, "404", err.Error())
-		return
-	}
 	if err != nil {
+		if errors.Is(err, repository.ErrBookNotFound) {
+			writeError(w, r, http.StatusNotFound, "404", err.Error())
+			return
+		}
 		writeError(w, r, http.StatusInternalServerError, "500", err.Error())
 		return
 	}
