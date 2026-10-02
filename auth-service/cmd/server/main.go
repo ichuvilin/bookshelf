@@ -3,6 +3,7 @@ package main
 import (
 	"bookshelf/auth-service/internal/config"
 	"bookshelf/auth-service/internal/repository"
+	"bookshelf/auth-service/internal/service"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -27,7 +28,8 @@ func main() {
 
 	log.Println("Connected to database")
 
-	_ = repository.NewUserRepository(db)
+	repo := repository.NewUserRepository(db)
+	service.NewUserService(repo, cfg.JWTSecret)
 
 	http.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")

@@ -23,12 +23,15 @@ func NewUserRepository(db *sqlx.DB) *UserRepository {
 	return &UserRepository{db: db}
 }
 
-func (r *UserRepository) Create(ctx context.Context, user *domain.User) error {
-	err := r.db.SelectContext(ctx, "INSERT INTO users (id, username, email, password_hash)  VALUES ($1, $2, $3, $4)", uuid.New().String(), user.Username, user.Email, user.PasswordHash)
+func (r *UserRepository) Create(ctx context.Context, user domain.RegisterRequest) (*domain.User, error) {
+	var createdUser domain.User
+
+	err := r.db.GetContext(ctx, &createdUser, "INSERT INTO users (id, username, email, password_hash)  VALUES ($1, $2, $3, $4) RETURNING *", uuid.New(), user.Username, user.Email, user.Password)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+
+	return &createdUser, nil
 }
 
 func (r *UserRepository) GetByID(ctx context.Context, id string) (*domain.User, error) {
@@ -69,19 +72,35 @@ func (r *UserRepository) GetByUsername(ctx context.Context, username string) (*d
 	return &user, nil
 }
 
-func (r *UserRepository) Update(ctx context.Context, user *domain.User) error {
-	result, err := r.db.ExecContext(ctx, "UPDATE users SET username = $1, updated_at = NOW() WHERE id = $2", user.Username, user.ID)
+func (r *UserRepository) Update(ctx context.Context, req domain.UpdateUserRequest) (*domain.User, error) {
+	var user *domain.User
+
+	err := r.db.GetContext(ctx, &user, "UPDATE users SET username = $1, updated_at = NOW() WHERE id = $2", req.Username, req.ID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	rows, err := result.RowsAffected()
+	return user, nil
+}
+
+func (r *UserRepository) EmailExists(ctx context.Context, email string) bool {
+	var exists bool
+
+	err := r.db.GetContext(ctx, &exists, "SELECT EXISTS (SELECT 1 FROM users WHERE email = $1)", email)
 	if err != nil {
-		return err
-	}
-	if rows != 1 {
-		return ErrUserNotFound
+		return false
 	}
 
-	return nil
+	return exists
+}
+
+func (r *UserRepository) UsernameExists(ctx context.Context, username string) bool {
+	var exists bool
+
+	err := r.db.GetContext(ctx, &exists, "SELECT EXISTS (SELECT 1 FROM users WHERE username = $1)", username)
+	if err != nil {
+		return false
+	}
+
+	return exists
 }
