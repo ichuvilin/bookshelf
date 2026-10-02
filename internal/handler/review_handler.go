@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -59,19 +60,23 @@ func (h *Handler) CreateReview(w http.ResponseWriter, r *http.Request) {
 	userID := getUserID(r.Context())
 	bookID := chi.URLParam(r, "bookId")
 
+	log.Println(userID, bookID)
+
 	var req domain.CreateReviewRequest
 	err := decodeJSON(r, &req)
 	if err != nil {
 		writeError(w, r, http.StatusInternalServerError, "500", err.Error())
 		return
 	}
+	req.UserID = userID
+	req.BookID = bookID
 
 	review, err := h.services.ReviewService.Create(r.Context(), userID, bookID, req)
-	if err != nil && errors.Is(err, service.ErrAlreadyReviewed) {
-		writeError(w, r, http.StatusConflict, "409", err.Error())
-		return
-	}
 	if err != nil {
+		if errors.Is(err, service.ErrAlreadyReviewed) {
+			writeError(w, r, http.StatusConflict, "409", err.Error())
+			return
+		}
 		writeError(w, r, http.StatusBadRequest, "400", err.Error())
 		return
 	}
@@ -112,11 +117,11 @@ func (h *Handler) DeleteReview(w http.ResponseWriter, r *http.Request) {
 	reviewID := chi.URLParam(r, "reviewId")
 
 	err := h.services.ReviewService.Delete(r.Context(), userID, reviewID)
-	if err != nil && errors.Is(err, service.ErrNotReviewOwner) {
-		writeError(w, r, http.StatusForbidden, "403", err.Error())
-		return
-	}
 	if err != nil {
+		if errors.Is(err, service.ErrNotReviewOwner) {
+			writeError(w, r, http.StatusForbidden, "403", err.Error())
+			return
+		}
 		writeError(w, r, http.StatusBadRequest, "400", err.Error())
 		return
 	}

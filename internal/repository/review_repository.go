@@ -17,27 +17,47 @@ type ReviewRepository struct {
 }
 
 func (r *ReviewRepository) Create(ctx context.Context, req domain.CreateReviewRequest) (*domain.Review, error) {
-	var review *domain.Review
+	var review domain.Review
 
-	err := r.db.SelectContext(ctx, &review, "INSERT INTO reviews (id, book_id, user_id, rating, title, content) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
-		uuid.New(), req.BookID, req.UserID, req.Rating, req.Title, req.Content,
+	err := r.db.GetContext(
+		ctx,
+		&review,
+		`
+            INSERT INTO reviews (
+                id,
+                book_id,
+                user_id,
+                rating,
+                title,
+                content
+            )
+            VALUES ($1, $2, $3, $4, $5, $6)
+            RETURNING *
+        `,
+		uuid.New(),
+		req.BookID,
+		req.UserID,
+		req.Rating,
+		req.Title,
+		req.Content,
 	)
+
 	if err != nil {
 		return nil, err
 	}
 
-	return review, nil
+	return &review, nil
 }
 
 func (r *ReviewRepository) GetByID(ctx context.Context, id string) (*domain.Review, error) {
-	var review *domain.Review
+	var review domain.Review
 
-	err := r.db.SelectContext(ctx, &review, "SELECT * FROM reviews WHERE id = $1", id)
+	err := r.db.GetContext(ctx, &review, "SELECT * FROM reviews WHERE id = $1", id)
 	if err != nil && errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrReviewNotFound
 	}
 
-	return review, nil
+	return &review, nil
 }
 
 func (r *ReviewRepository) ListByBookID(ctx context.Context, bookID string, page, limit int) ([]domain.Review, int, error) {
