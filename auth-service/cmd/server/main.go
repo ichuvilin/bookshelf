@@ -2,13 +2,16 @@ package main
 
 import (
 	"bookshelf/auth-service/internal/config"
+	"bookshelf/auth-service/internal/handler"
 	"bookshelf/auth-service/internal/repository"
 	"bookshelf/auth-service/internal/service"
-	"encoding/json"
 	"log"
 	"net/http"
 	"time"
 
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 )
@@ -29,22 +32,37 @@ func main() {
 	log.Println("Connected to database")
 
 	repo := repository.NewUserRepository(db)
-	service.NewUserService(repo, cfg.JWTSecret)
+	svc := service.NewUserService(repo, cfg.JWTSecret)
+	h := handler.NewAuthHandler(svc)
 
-	http.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
+	r := chi.NewRouter()
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:5174"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: true,
+		MaxAge:           300,
+	}))
 
-		if err := json.NewEncoder(w).Encode(map[string]string{
-			"status":   "ok",
-			"service":  "auth-service",
-			"database": "connected",
-		}); err != nil {
-			return
-		}
+	r.Get("/health", h.Health)
+	r.Get("/ready", h.Ready)
 
+	r.Route("/api/v1", func(r chi.Router) {
+		r.Post("/auth/register", h.Register)
+		r.Post("/auth/login", h.Login)
+
+		r.Group(func(r chi.Router) {
+			r.Use(h.AuthMiddleware)
+
+			r.Get("/users/me", h.GetMe)
+			r.Put("/users/me", h.UpdateMe)
+		})
 	})
 
-	err = http.ListenAndServe(cfg.Port, nil)
+	err = http.ListenAndServe(cfg.Port, r)
 	if err != nil {
 		log.Fatal(err)
 	}

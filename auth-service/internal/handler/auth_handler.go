@@ -8,6 +8,7 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5/middleware"
 )
@@ -89,6 +90,25 @@ func (h *AuthHandler) UpdateMe(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, 200, user)
+}
+
+func (h *AuthHandler) Health(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]string{
+		"status":   "ok",
+		"service":  "auth-service",
+		"database": "connected",
+	})
+}
+
+func (h *AuthHandler) Ready(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]any{
+		"status":    "ok",
+		"version":   "1.0.0",
+		"timestamp": time.Now().UTC(),
+		"checks": map[string]string{
+			"database": "ok",
+		},
+	})
 }
 
 func decodeJSON(r *http.Request, v interface{}) error {
