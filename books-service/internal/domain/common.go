@@ -29,3 +29,11 @@ func NewPagination(page, limit, total int) Pagination {
 		TotalPages: int(math.Ceil(float64(total) / float64(limit))),
 	}
 }
+
+type ListParams struct {
+	Search string
+	Sort   string
+	Order  string
+	Page   int
+	Limit  int
+}

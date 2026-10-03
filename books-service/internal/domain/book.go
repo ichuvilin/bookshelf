@@ -11,7 +11,7 @@ type Book struct {
 	Title       string    `json:"title" db:"title"`
 	Author      string    `json:"author" db:"author"`
 	Description string    `json:"description" db:"description"`
-	UserID      string    `json:"user_id" db:"user_id"`
+	UserID      string    `json:"user_id" db:"created_by"`
 	Rating      int       `json:"-" db:"rating"`
 	CreatedAt   time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
