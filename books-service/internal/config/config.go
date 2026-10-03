@@ -18,10 +18,10 @@ func Load() *Config {
 	}
 	dbUrl := os.Getenv("DATABASE_URL")
 	if dbUrl == "" {
-		dbUrl = "postgres://postgres:postgres@localhost:5432/books?sslmode=disable"
+		dbUrl = "postgres://postgres:postgres@localhost:5433/books?sslmode=disable"
 	}
 
-	authServiceURL := os.Getenv("JWT_SECRET")
+	authServiceURL := os.Getenv("AUTH_SERVICE_URL")
 	if authServiceURL == "" {
 		authServiceURL = "http://localhost:8081"
 	}

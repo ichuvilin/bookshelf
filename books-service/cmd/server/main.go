@@ -2,13 +2,27 @@ package main
 
 import (
 	"bookshelf/books-service/internal/config"
+	"bookshelf/books-service/internal/repository"
 	"encoding/json"
 	"log"
 	"net/http"
+
+	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 )
 
 func main() {
 	cfg := config.Load()
+
+	db, err := sqlx.Connect("postgres", cfg.DatabaseURL)
+	if err != nil {
+		log.Fatal(err)
+	}
+	db.Close()
+
+	log.Println("Connected to database")
+
+	_ = repository.NewReviewRepository(db)
 
 	http.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -20,7 +34,7 @@ func main() {
 		}
 	})
 
-	err := http.ListenAndServe(cfg.Port, nil)
+	err = http.ListenAndServe(cfg.Port, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
