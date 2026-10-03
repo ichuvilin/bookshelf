@@ -5,6 +5,7 @@ import (
 	"bookshelf/auth-service/internal/repository"
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -148,4 +149,30 @@ func (s *UserService) generateAccessToken(userID string) (string, error) {
 	}
 
 	return signedToken, nil
+}
+
+func (s *UserService) ValidateToken(tokenString string) (string, error) {
+	token, err := jwt.Parse(
+		tokenString,
+		func(token *jwt.Token) (interface{}, error) {
+			if token.Method != jwt.SigningMethodHS256 {
+				return nil, fmt.Errorf("unexpected signing method: %v", token.Method.Alg())
+			}
+
+			return []byte(s.jwtSecret), nil
+		},
+	)
+	if err != nil {
+		return "", err
+	}
+
+	if !token.Valid {
+		return "", errors.New("invalid token")
+	}
+
+	subject, err := token.Claims.GetSubject()
+	if err != nil {
+		return "", err
+	}
+	return subject, nil
 }
