@@ -45,7 +45,10 @@ func (h *ReviewHandler) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, reviews)
+	writeJSON(w, http.StatusOK, domain.ReviewListResponse{
+		Data:  reviews,
+		Total: len(reviews),
+	})
 }
 
 func (h *ReviewHandler) Update(w http.ResponseWriter, r *http.Request) {

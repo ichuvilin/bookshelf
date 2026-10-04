@@ -30,3 +30,8 @@ type UpdateReviewRequest struct {
 	Title   *string `json:"title"`
 	Content *string `json:"content"`
 }
+
+type ReviewListResponse struct {
+	Data  []Review `json:"data"`
+	Total int      `json:"total"`
+}
