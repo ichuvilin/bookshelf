@@ -21,11 +21,7 @@ func NewReviewRepository(db *sqlx.DB) *ReviewRepository {
 }
 
 func (r *ReviewRepository) Create(ctx context.Context, review *domain.Review) error {
-	_, err := r.db.ExecContext(ctx, "INSERT INTO reviews (id, book_id, user_id, rating, title, content) VALUES ($1, $2, $3, $4, $5, $6)", uuid.New(), review.BookID, review.UserID, review.Rating, review.Title, review.Content)
-	if err != nil {
-		return err
-	}
-	return nil
+	return r.db.GetContext(ctx, review, "INSERT INTO reviews (id, book_id, user_id, rating, title, content) VALUES ($1, $2, $3, $4, $5, $6)", uuid.New(), review.BookID, review.UserID, review.Rating, review.Title, review.Content)
 }
 
 func (r *ReviewRepository) GetByID(ctx context.Context, id string) (*domain.Review, error) {
@@ -76,29 +72,14 @@ func (r *ReviewRepository) Update(ctx context.Context, review *domain.Review) er
 		UPDATE reviews
 		SET
 			title = COALESCE($1, title),
-			book_id = COALESCE($2, book_id),
-			user_id = COALESCE($3, user_id),
-			rating = COALESCE($4, rating),
-			title = COALESCE($5, title),
-			content = COALESCE($6, content)
-		WHERE id = $7
+			rating = COALESCE($2, rating),
+			content = COALESCE($3, content),
+			updated_at = NOW()
+		WHERE id = $4
 		RETURNING *
 	`
 
-	result, err := r.db.ExecContext(ctx, query, review.Title, review.BookID, review.UserID, review.Rating, review.Title, review.Content, review.ID)
-	if err != nil {
-		return err
-	}
-
-	rows, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rows == 0 {
-		return ErrReviewNotFound
-	}
-
-	return nil
+	return r.db.GetContext(ctx, query, review.Title, review.Rating, review.Content, review.ID)
 }
 
 func (r *ReviewRepository) Delete(ctx context.Context, id string) error {

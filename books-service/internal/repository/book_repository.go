@@ -70,10 +70,6 @@ func (r *BookRepository) List(ctx context.Context, filter domain.ListParams) ([]
 		order = "DESC"
 	}
 
-	// --------------------
-	// WHERE
-	// --------------------
-
 	conditions := squirrel.And{}
 
 	if filter.Search != "" {
