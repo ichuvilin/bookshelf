@@ -28,7 +28,7 @@ func (r *BookRepository) Create(ctx context.Context, book *domain.Book) error {
 func (r *BookRepository) GetByID(ctx context.Context, id string) (*domain.Book, error) {
 	var book domain.Book
 
-	if err := r.db.GetContext(ctx, &book, "SELECT * FROM books where id = $1", id); err != nil {
+	if err := r.db.GetContext(ctx, &book, "SELECT id, title, author, description, created_by, created_at, updated_at FROM books where id = $1", id); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrBookNotFound
 		}
@@ -110,9 +110,7 @@ func (r *BookRepository) List(ctx context.Context, filter domain.ListParams) ([]
 			"id",
 			"title",
 			"description",
-			"isbn",
 			"author",
-			"published_year",
 			"created_at",
 			"updated_at",
 		).
