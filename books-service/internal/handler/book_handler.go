@@ -5,7 +5,6 @@ import (
 	"bookshelf/books-service/internal/repository"
 	"bookshelf/books-service/internal/service"
 	"errors"
-	"log"
 	"net/http"
 	"strconv"
 
@@ -87,7 +86,6 @@ func (h *BookHandler) List(w http.ResponseWriter, r *http.Request) {
 
 	books, total, err := h.svc.List(r.Context(), filters)
 	if err != nil {
-		log.Println(err)
 		writeError(w, r, http.StatusInternalServerError, "500", err.Error())
 		return
 	}

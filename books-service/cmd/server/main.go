@@ -31,9 +31,10 @@ func main() {
 	reviewRepo := repository.NewReviewRepository(db)
 
 	bookSvc := service.NewBookService(bookRepo)
-	_ = service.NewReviewService(reviewRepo, bookRepo)
+	reviewSvc := service.NewReviewService(reviewRepo, bookRepo)
 
 	bookHandler := handler.NewBookHandler(bookSvc)
+	reviewHandler := handler.NewReviewHandler(reviewSvc)
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
@@ -53,6 +54,11 @@ func main() {
 		r.Get("/books/{id}", bookHandler.GetByID)
 		r.Put("/books/{id}", bookHandler.Update)
 		r.Delete("/books/{id}", bookHandler.Delete)
+
+		r.Post("/books/{book_id}/reviews", reviewHandler.Create)
+		r.Get("/books/{book_id}/reviews", reviewHandler.List)
+		r.Put("/reviews/{id}", reviewHandler.Update)
+		r.Delete("/reviews/{id}", reviewHandler.Delete)
 	})
 
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {

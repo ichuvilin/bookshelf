@@ -21,11 +21,11 @@ type CreateReviewRequest struct {
 	Rating  int    `json:"rating,omitempty"`
 	Title   string `json:"title"`
 	Content string `json:"content,omitempty"`
+	UserID  string `json:"user_id"`
 }
 
 type UpdateReviewRequest struct {
-	BookID  *string `json:"book_id"`
-	UserID  *string `json:"user_id"`
+	UserID  string  `json:"user_id"`
 	Rating  *int    `json:"rating"`
 	Title   *string `json:"title"`
 	Content *string `json:"content"`
