@@ -18,8 +18,6 @@ type Review struct {
 }
 
 type CreateReviewRequest struct {
-	BookID  string `json:"book_id"`
-	UserID  string `json:"user_id"`
 	Rating  int    `json:"rating,omitempty"`
 	Title   string `json:"title"`
 	Content string `json:"content,omitempty"`

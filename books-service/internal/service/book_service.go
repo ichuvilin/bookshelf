@@ -6,6 +6,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+
+	"github.com/google/uuid"
 )
 
 var (
@@ -16,8 +18,13 @@ type BookService struct {
 	repo *repository.BookRepository
 }
 
+func NewBookService(repo *repository.BookRepository) *BookService {
+	return &BookService{repo: repo}
+}
+
 func (s *BookService) Create(ctx context.Context, userID string, req domain.CreateBookRequest) (*domain.Book, error) {
 	book := &domain.Book{
+		ID:     uuid.New(),
 		Title:  req.Title,
 		Author: req.Author,
 		UserID: userID,

@@ -5,29 +5,43 @@ import (
 	"bookshelf/books-service/internal/repository"
 	"context"
 	"errors"
+
+	"github.com/google/uuid"
 )
 
 var (
 	ErrNotReviewOwner = errors.New("not your review")
+	ErrInvalidRating  = errors.New("invalid rating value")
 )
 
 type ReviewService struct {
-	repo *repository.ReviewRepository
+	reviewRepo *repository.ReviewRepository
+	bookRepo   *repository.BookRepository
 }
 
-func NewReviewService(repo *repository.ReviewRepository) *ReviewService {
-	return &ReviewService{repo: repo}
+func NewReviewService(reviewRepo *repository.ReviewRepository, bookRepo *repository.BookRepository) *ReviewService {
+	return &ReviewService{reviewRepo: reviewRepo, bookRepo: bookRepo}
 }
 
 func (s *ReviewService) Create(ctx context.Context, userID string, bookID string, req domain.CreateReviewRequest) (*domain.Review, error) {
+	_, err := s.bookRepo.GetByID(ctx, bookID)
+	if err != nil {
+		return nil, err
+	}
+
+	if req.Rating < 1 || req.Rating > 5 {
+		return nil, ErrInvalidRating
+	}
+
 	review := &domain.Review{
-		BookID:  req.BookID,
+		ID:      uuid.New(),
+		BookID:  bookID,
 		UserID:  userID,
 		Rating:  req.Rating,
 		Title:   req.Title,
 		Content: req.Content,
 	}
-	err := s.repo.Create(ctx, review)
+	err = s.reviewRepo.Create(ctx, review)
 	if err != nil {
 		return nil, err
 	}
@@ -36,15 +50,15 @@ func (s *ReviewService) Create(ctx context.Context, userID string, bookID string
 }
 
 func (s *ReviewService) GetByID(ctx context.Context, id string) (*domain.Review, error) {
-	return s.repo.GetByID(ctx, id)
+	return s.reviewRepo.GetByID(ctx, id)
 }
 
 func (s *ReviewService) ListByBook(ctx context.Context, bookID string) ([]domain.Review, error) {
-	return s.repo.ListByBookID(ctx, bookID)
+	return s.reviewRepo.ListByBookID(ctx, bookID)
 }
 
 func (s *ReviewService) Update(ctx context.Context, userID string, id string, req domain.UpdateReviewRequest) (*domain.Review, error) {
-	review, err := s.repo.GetByID(ctx, id)
+	review, err := s.reviewRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +78,7 @@ func (s *ReviewService) Update(ctx context.Context, userID string, id string, re
 		review.Content = *req.Content
 	}
 
-	if err := s.repo.Update(ctx, review); err != nil {
+	if err := s.reviewRepo.Update(ctx, review); err != nil {
 		return nil, err
 	}
 
@@ -72,7 +86,7 @@ func (s *ReviewService) Update(ctx context.Context, userID string, id string, re
 }
 
 func (s *ReviewService) Delete(ctx context.Context, userID string, id string) error {
-	review, err := s.repo.GetByID(ctx, id)
+	review, err := s.reviewRepo.GetByID(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -81,5 +95,5 @@ func (s *ReviewService) Delete(ctx context.Context, userID string, id string) er
 		return ErrNotReviewOwner
 	}
 
-	return s.repo.Delete(ctx, id)
+	return s.reviewRepo.Delete(ctx, id)
 }

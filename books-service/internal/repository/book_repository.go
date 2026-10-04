@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/Masterminds/squirrel"
-	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -23,7 +22,7 @@ func NewBookRepository(db *sqlx.DB) *BookRepository {
 }
 
 func (r *BookRepository) Create(ctx context.Context, book *domain.Book) error {
-	return r.db.GetContext(ctx, book, "INSERT INTO books (id, title, author, description, created_by) VALUES ($1, $2, $3, $4, $5) RETURNING *", uuid.New(), book.Title, book.Author, book.Description, book.UserID)
+	return r.db.GetContext(ctx, book, "INSERT INTO books (id, title, author, description, created_by) VALUES ($1, $2, $3, $4, $5) RETURNING *", book.ID, book.Title, book.Author, book.Description, book.UserID)
 }
 
 func (r *BookRepository) GetByID(ctx context.Context, id string) (*domain.Book, error) {

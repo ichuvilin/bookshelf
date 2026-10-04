@@ -3,6 +3,7 @@ package main
 import (
 	"bookshelf/books-service/internal/config"
 	"bookshelf/books-service/internal/repository"
+	"bookshelf/books-service/internal/service"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -22,7 +23,11 @@ func main() {
 
 	log.Println("Connected to database")
 
-	_ = repository.NewReviewRepository(db)
+	bookRepo := repository.NewBookRepository(db)
+	reviewRepo := repository.NewReviewRepository(db)
+
+	_ = service.NewBookService(bookRepo)
+	_ = service.NewReviewService(reviewRepo, bookRepo)
 
 	http.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
