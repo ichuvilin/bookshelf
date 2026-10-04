@@ -1,20 +1,21 @@
 package domain
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
 )
 
 type Book struct {
-	ID          uuid.UUID `json:"id" db:"id"`
-	Title       string    `json:"title" db:"title"`
-	Author      string    `json:"author" db:"author"`
-	Description string    `json:"description" db:"description"`
-	UserID      string    `json:"user_id" db:"created_by"`
-	Rating      int       `json:"-" db:"rating"`
-	CreatedAt   time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
+	ID          uuid.UUID      `json:"id" db:"id"`
+	Title       string         `json:"title" db:"title"`
+	Author      string         `json:"author" db:"author"`
+	Description sql.NullString `json:"description" db:"description"`
+	UserID      string         `json:"user_id" db:"created_by"`
+	Rating      int            `json:"-" db:"rating"`
+	CreatedAt   time.Time      `json:"created_at" db:"created_at"`
+	UpdatedAt   time.Time      `json:"updated_at" db:"updated_at"`
 }
 
 type CreateBookRequest struct {

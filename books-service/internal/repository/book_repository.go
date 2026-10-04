@@ -23,10 +23,7 @@ func NewBookRepository(db *sqlx.DB) *BookRepository {
 }
 
 func (r *BookRepository) Create(ctx context.Context, book *domain.Book) error {
-	if _, err := r.db.ExecContext(ctx, "INSERT INTO books (id, title, author, description, created_by) VALUES ($1, $2, $3, $4, $5)", uuid.New(), book.Title, book.Author, book.Description, book.UserID); err != nil {
-		return err
-	}
-	return nil
+	return r.db.GetContext(ctx, book, "INSERT INTO books (id, title, author, description, created_by) VALUES ($1, $2, $3, $4, $5) RETURNING *", uuid.New(), book.Title, book.Author, book.Description, book.UserID)
 }
 
 func (r *BookRepository) GetByID(ctx context.Context, id string) (*domain.Book, error) {
@@ -263,35 +260,25 @@ func (r *BookRepository) ListByUserID(ctx context.Context, userID string, filter
 
 func (r *BookRepository) Update(ctx context.Context, book *domain.Book) error {
 	const query = `
-		UPDATE books
-		SET
-			title = COALESCE($1, title),
-			description = COALESCE($2, description),
-			author = COALESCE($3, author)
-		WHERE id = $4
-		RETURNING *
-	`
+        UPDATE books
+        SET
+            title = COALESCE($1, title),
+            description = COALESCE($2, description),
+            author = COALESCE($3, author),
+            updated_at = NOW()
+        WHERE id = $4
+        RETURNING *
+    `
 
-	result, err := r.db.ExecContext(
+	return r.db.GetContext(
 		ctx,
+		book,
 		query,
 		book.Title,
 		book.Description,
 		book.Author,
 		book.ID,
 	)
-	if err != nil {
-		return err
-	}
-	rows, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rows == 0 {
-		return ErrBookNotFound
-	}
-
-	return nil
 }
 
 func (r *BookRepository) Delete(ctx context.Context, id string) error {
