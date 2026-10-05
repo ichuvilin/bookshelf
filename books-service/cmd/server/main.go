@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bookshelf/books-service/internal/client"
 	"bookshelf/books-service/internal/config"
 	"bookshelf/books-service/internal/handler"
 	"bookshelf/books-service/internal/repository"
@@ -8,6 +9,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -35,6 +37,8 @@ func main() {
 
 	bookHandler := handler.NewBookHandler(bookSvc)
 	reviewHandler := handler.NewReviewHandler(reviewSvc)
+
+	_ = client.NewHTTPClient(cfg.AuthServiceURL, 5*time.Second)
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
