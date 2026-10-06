@@ -183,3 +183,15 @@ func (s *UserService) ValidateToken(tokenString string) (*domain.TokenClaims, er
 		ExpiresAt: expirationTime.Time,
 	}, nil
 }
+
+func (s *UserService) GetUsersByIDs(ctx context.Context, ids []string) ([]domain.UserPublic, error) {
+	users, err := s.repo.GetByIDs(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	usersPub := make([]domain.UserPublic, 0, len(users))
+	for _, u := range users {
+		usersPub = append(usersPub, u.ToPublic())
+	}
+	return usersPub, err
+}

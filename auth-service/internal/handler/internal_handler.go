@@ -52,3 +52,26 @@ func (h *InternalHandler) VerifyToken(w http.ResponseWriter, r *http.Request) {
 		Error:     "",
 	})
 }
+
+func (h *InternalHandler) GetUsersByIDs(w http.ResponseWriter, r *http.Request) {
+	type userIDsRequest struct {
+		IDs []string `json:"ids"`
+	}
+
+	var req userIDsRequest
+	err := decodeJSON(r, &req)
+	if err != nil {
+		writeError(w, r, http.StatusInternalServerError, "500", err.Error())
+		return
+	}
+
+	users, err := h.svc.GetUsersByIDs(r.Context(), req.IDs)
+	if err != nil {
+		writeError(w, r, http.StatusBadRequest, "400", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]any{
+		"users": users,
+	})
+}

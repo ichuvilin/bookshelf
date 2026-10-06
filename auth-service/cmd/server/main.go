@@ -64,7 +64,8 @@ func main() {
 	})
 
 	r.Route("/internal/v1", func(r chi.Router) {
-		r.Post("auth/verify", internalHandler.VerifyToken)
+		r.Post("/auth/verify", internalHandler.VerifyToken)
+		r.Post("/users/batch", internalHandler.GetUsersByIDs)
 	})
 
 	err = http.ListenAndServe(cfg.Port, r)

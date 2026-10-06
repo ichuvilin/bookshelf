@@ -104,3 +104,14 @@ func (r *UserRepository) UsernameExists(ctx context.Context, username string) bo
 
 	return exists
 }
+
+func (r *UserRepository) GetByIDs(ctx context.Context, ids []string) ([]domain.User, error) {
+	var users []domain.User
+
+	err := r.db.SelectContext(ctx, &users, "SELECT * FROM users WHERE id = ANY($1)", ids)
+	if err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
