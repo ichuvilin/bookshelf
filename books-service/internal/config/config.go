@@ -9,6 +9,7 @@ type Config struct {
 	Port           string
 	DatabaseURL    string
 	AuthServiceURL string
+	ServiceKey     string
 }
 
 func Load() *Config {
@@ -26,9 +27,15 @@ func Load() *Config {
 		authServiceURL = "http://localhost:8081"
 	}
 
+	svcKey := os.Getenv("SERVICE_KEY")
+	if svcKey == "" {
+		svcKey = "dev-service-key"
+	}
+
 	return &Config{
 		Port:           fmt.Sprintf(":%s", port),
 		DatabaseURL:    dbUrl,
 		AuthServiceURL: authServiceURL,
+		ServiceKey:     svcKey,
 	}
 }

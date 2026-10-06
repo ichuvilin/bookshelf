@@ -64,6 +64,8 @@ func main() {
 	})
 
 	r.Route("/internal/v1", func(r chi.Router) {
+		r.Use(handler.ServiceKeyMiddleware(cfg.ServiceKey))
+
 		r.Post("/auth/verify", internalHandler.VerifyToken)
 		r.Post("/users/batch", internalHandler.GetUsersByIDs)
 	})

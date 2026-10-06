@@ -9,6 +9,7 @@ import (
 
 type AuthClient struct {
 	httpClient *HTTPClient
+	serviceKey string
 }
 
 type VerifyResponse struct {
@@ -26,12 +27,13 @@ type UserPublic struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-func NewAuthClient(baseURL string, timeout time.Duration) *AuthClient {
+func NewAuthClient(baseURL string, timeout time.Duration, serviceKey string) *AuthClient {
 	return &AuthClient{
 		httpClient: &HTTPClient{
 			client:  &http.Client{Timeout: timeout},
 			baseURL: baseURL,
 		},
+		serviceKey: serviceKey,
 	}
 }
 
@@ -47,7 +49,9 @@ func (c *AuthClient) VerifyToken(ctx context.Context, token string) (*VerifyResp
 		return nil, err
 	}
 
-	resp, err := c.httpClient.Post(ctx, "/internal/v1/auth/verify", body, make(map[string]string))
+	resp, err := c.httpClient.Post(ctx, "/internal/v1/auth/verify", body, map[string]string{
+		"X-Service-Key": c.serviceKey,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +76,9 @@ func (c *AuthClient) GetUsersByIDs(ctx context.Context, ids []string) ([]UserPub
 		return nil, err
 	}
 
-	resp, err := c.httpClient.Post(ctx, "/internal/v1/users/batch", body, make(map[string]string))
+	resp, err := c.httpClient.Post(ctx, "/internal/v1/users/batch", body, map[string]string{
+		"X-Service-Key": c.serviceKey,
+	})
 	if err != nil {
 		return nil, err
 	}
