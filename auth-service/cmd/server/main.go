@@ -35,6 +35,7 @@ func main() {
 	svc := service.NewUserService(repo, cfg.JWTSecret)
 	h := handler.NewAuthHandler(svc)
 	internalHandler := handler.NewInternalHandler(svc)
+	healthHandler := handler.NewHealthHandler(db, "1.0.0")
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
@@ -48,7 +49,7 @@ func main() {
 		MaxAge:           300,
 	}))
 
-	r.Get("/health", h.Health)
+	r.Get("/health", healthHandler.Health)
 	r.Get("/ready", h.Ready)
 
 	r.Route("/api/v1", func(r chi.Router) {

@@ -18,7 +18,7 @@ func AuthMiddleware(authClient *client.AuthClient) func(http.Handler) http.Handl
 			authHeader := r.Header.Get("Authorization")
 
 			if authHeader == "" {
-				WriteError(
+				writeError(
 					w,
 					r,
 					http.StatusUnauthorized,
@@ -31,7 +31,7 @@ func AuthMiddleware(authClient *client.AuthClient) func(http.Handler) http.Handl
 			parts := strings.SplitN(authHeader, " ", 2)
 
 			if len(parts) != 2 || parts[0] != "Bearer" || parts[1] == "" {
-				WriteError(
+				writeError(
 					w,
 					r,
 					http.StatusUnauthorized,
@@ -46,7 +46,7 @@ func AuthMiddleware(authClient *client.AuthClient) func(http.Handler) http.Handl
 			resp, err := authClient.VerifyToken(r.Context(), token)
 			if err != nil {
 				log.Println(err)
-				WriteError(
+				writeError(
 					w,
 					r,
 					http.StatusServiceUnavailable,
@@ -57,7 +57,7 @@ func AuthMiddleware(authClient *client.AuthClient) func(http.Handler) http.Handl
 			}
 
 			if !resp.Valid {
-				WriteError(
+				writeError(
 					w,
 					r,
 					http.StatusUnauthorized,

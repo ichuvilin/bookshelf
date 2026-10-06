@@ -23,7 +23,7 @@ func (h *BookHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var req domain.CreateBookRequest
 	err := decodeJSON(r, &req)
 	if err != nil {
-		WriteError(w, r, http.StatusInternalServerError, "500", err.Error())
+		writeError(w, r, http.StatusInternalServerError, "500", err.Error())
 		return
 	}
 
@@ -31,11 +31,11 @@ func (h *BookHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	book, err := h.svc.Create(r.Context(), userID, req)
 	if err != nil {
-		WriteError(w, r, http.StatusBadRequest, "400", err.Error())
+		writeError(w, r, http.StatusBadRequest, "400", err.Error())
 		return
 	}
 
-	WriteJSON(w, http.StatusCreated, book.ToResponse())
+	writeJSON(w, http.StatusCreated, book.ToResponse())
 }
 
 func (h *BookHandler) GetByID(w http.ResponseWriter, r *http.Request) {
@@ -43,14 +43,14 @@ func (h *BookHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	book, err := h.svc.GetByID(r.Context(), bookID)
 	if err != nil {
 		if errors.Is(err, repository.ErrBookNotFound) {
-			WriteError(w, r, http.StatusNotFound, "404", err.Error())
+			writeError(w, r, http.StatusNotFound, "404", err.Error())
 			return
 		}
-		WriteError(w, r, http.StatusInternalServerError, "500", err.Error())
+		writeError(w, r, http.StatusInternalServerError, "500", err.Error())
 		return
 	}
 
-	WriteJSON(w, http.StatusOK, book)
+	writeJSON(w, http.StatusOK, book)
 }
 
 func (h *BookHandler) List(w http.ResponseWriter, r *http.Request) {
@@ -63,7 +63,7 @@ func (h *BookHandler) List(w http.ResponseWriter, r *http.Request) {
 		var err error
 		page, err = strconv.Atoi(value)
 		if err != nil {
-			WriteError(w, r, http.StatusBadRequest, "400", "Invalid page")
+			writeError(w, r, http.StatusBadRequest, "400", "Invalid page")
 			return
 		}
 	}
@@ -73,7 +73,7 @@ func (h *BookHandler) List(w http.ResponseWriter, r *http.Request) {
 		var err error
 		limit, err = strconv.Atoi(value)
 		if err != nil {
-			WriteError(w, r, http.StatusBadRequest, "400", "Invalid limit")
+			writeError(w, r, http.StatusBadRequest, "400", "Invalid limit")
 			return
 		}
 	}
@@ -88,11 +88,11 @@ func (h *BookHandler) List(w http.ResponseWriter, r *http.Request) {
 
 	books, total, err := h.svc.List(r.Context(), filters)
 	if err != nil {
-		WriteError(w, r, http.StatusInternalServerError, "500", err.Error())
+		writeError(w, r, http.StatusInternalServerError, "500", err.Error())
 		return
 	}
 
-	WriteJSON(w, http.StatusOK, domain.BookListResponse{
+	writeJSON(w, http.StatusOK, domain.BookListResponse{
 		Data:       books,
 		Pagination: domain.NewPagination(page, limit, total),
 	})
@@ -104,7 +104,7 @@ func (h *BookHandler) Update(w http.ResponseWriter, r *http.Request) {
 	var req domain.UpdateBookRequest
 	err := decodeJSON(r, &req)
 	if err != nil {
-		WriteError(w, r, http.StatusInternalServerError, "500", err.Error())
+		writeError(w, r, http.StatusInternalServerError, "500", err.Error())
 		return
 	}
 
@@ -112,15 +112,15 @@ func (h *BookHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	book, err := h.svc.Update(r.Context(), userID, bookID, req)
 	if err != nil && errors.Is(err, service.ErrNotBookOwner) {
-		WriteError(w, r, http.StatusForbidden, "403", err.Error())
+		writeError(w, r, http.StatusForbidden, "403", err.Error())
 		return
 	}
 	if err != nil {
-		WriteError(w, r, http.StatusBadRequest, "400", err.Error())
+		writeError(w, r, http.StatusBadRequest, "400", err.Error())
 		return
 	}
 
-	WriteJSON(w, http.StatusOK, book)
+	writeJSON(w, http.StatusOK, book)
 }
 
 func (h *BookHandler) Delete(w http.ResponseWriter, r *http.Request) {
@@ -129,13 +129,13 @@ func (h *BookHandler) Delete(w http.ResponseWriter, r *http.Request) {
 
 	err := h.svc.Delete(r.Context(), userID, bookID)
 	if err != nil && errors.Is(err, service.ErrNotBookOwner) {
-		WriteError(w, r, http.StatusForbidden, "403", err.Error())
+		writeError(w, r, http.StatusForbidden, "403", err.Error())
 		return
 	}
 	if err != nil {
-		WriteError(w, r, http.StatusBadRequest, "400", err.Error())
+		writeError(w, r, http.StatusBadRequest, "400", err.Error())
 		return
 	}
 
-	WriteJSON(w, http.StatusNoContent, nil)
+	writeJSON(w, http.StatusNoContent, nil)
 }

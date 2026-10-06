@@ -39,6 +39,7 @@ func main() {
 
 	bookHandler := handler.NewBookHandler(bookSvc)
 	reviewHandler := handler.NewReviewHandler(reviewSvc)
+	healthHandler := handler.NewHealthHandler(db, "1.0.0")
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
@@ -51,6 +52,8 @@ func main() {
 		AllowCredentials: true,
 		MaxAge:           300,
 	}))
+
+	r.Get("/health", healthHandler.Health)
 
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Get("/books", bookHandler.List)
@@ -68,16 +71,6 @@ func main() {
 			r.Put("/reviews/{id}", reviewHandler.Update)
 			r.Delete("/reviews/{id}", reviewHandler.Delete)
 		})
-	})
-
-	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(map[string]string{
-			"status":  "ok",
-			"service": "books-service",
-		}); err != nil {
-			return
-		}
 	})
 
 	r.Get("/ready", func(w http.ResponseWriter, r *http.Request) {
