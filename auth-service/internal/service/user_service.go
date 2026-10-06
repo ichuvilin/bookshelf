@@ -151,7 +151,7 @@ func (s *UserService) generateAccessToken(userID string) (string, error) {
 	return signedToken, nil
 }
 
-func (s *UserService) ValidateToken(tokenString string) (string, error) {
+func (s *UserService) ValidateToken(tokenString string) (*domain.TokenClaims, error) {
 	token, err := jwt.Parse(
 		tokenString,
 		func(token *jwt.Token) (interface{}, error) {
@@ -163,16 +163,23 @@ func (s *UserService) ValidateToken(tokenString string) (string, error) {
 		},
 	)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	if !token.Valid {
-		return "", errors.New("invalid token")
+		return nil, errors.New("invalid token")
 	}
 
 	subject, err := token.Claims.GetSubject()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return subject, nil
+	expirationTime, err := token.Claims.GetExpirationTime()
+	if err != nil {
+		return nil, err
+	}
+	return &domain.TokenClaims{
+		UserID:    subject,
+		ExpiresAt: expirationTime.Time,
+	}, nil
 }

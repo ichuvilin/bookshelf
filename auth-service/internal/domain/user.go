@@ -66,3 +66,8 @@ func (u *User) ToSummary() *UserSummary {
 		Username: u.Username,
 	}
 }
+
+type TokenClaims struct {
+	UserID    string
+	ExpiresAt time.Time
+}

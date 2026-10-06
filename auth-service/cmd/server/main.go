@@ -34,6 +34,7 @@ func main() {
 	repo := repository.NewUserRepository(db)
 	svc := service.NewUserService(repo, cfg.JWTSecret)
 	h := handler.NewAuthHandler(svc)
+	internalHandler := handler.NewInternalHandler(svc)
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
@@ -60,6 +61,10 @@ func main() {
 			r.Get("/users/me", h.GetMe)
 			r.Put("/users/me", h.UpdateMe)
 		})
+	})
+
+	r.Route("/internal/v1", func(r chi.Router) {
+		r.Post("auth/verify", internalHandler.VerifyToken)
 	})
 
 	err = http.ListenAndServe(cfg.Port, r)

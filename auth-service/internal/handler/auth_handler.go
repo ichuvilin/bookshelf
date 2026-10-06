@@ -174,7 +174,7 @@ func (h *AuthHandler) AuthMiddleware(next http.Handler) http.Handler {
 
 		token := parts[1]
 
-		userID, err := h.svc.ValidateToken(token)
+		tokenClaims, err := h.svc.ValidateToken(token)
 		if err != nil {
 			writeError(
 				w,
@@ -186,7 +186,7 @@ func (h *AuthHandler) AuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), userIDKey, userID)
+		ctx := context.WithValue(r.Context(), userIDKey, tokenClaims.UserID)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
