@@ -80,6 +80,9 @@ func (s *ReviewService) Update(ctx context.Context, userID string, id string, re
 	}
 
 	if req.Rating != nil {
+		if *req.Rating < 1 || *req.Rating > 5 {
+			return nil, ErrInvalidRating
+		}
 		review.Rating = *req.Rating
 	}
 
