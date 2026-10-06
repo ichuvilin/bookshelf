@@ -3,7 +3,6 @@ package client
 import (
 	"context"
 	"encoding/json"
-	"net/http"
 	"time"
 )
 
@@ -29,10 +28,7 @@ type UserPublic struct {
 
 func NewAuthClient(baseURL string, timeout time.Duration, serviceKey string) *AuthClient {
 	return &AuthClient{
-		httpClient: &HTTPClient{
-			client:  &http.Client{Timeout: timeout},
-			baseURL: baseURL,
-		},
+		httpClient: NewHTTPClient(baseURL, timeout),
 		serviceKey: serviceKey,
 	}
 }
