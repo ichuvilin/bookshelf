@@ -20,7 +20,7 @@ func NewReviewRepository(db *sqlx.DB) *ReviewRepository {
 }
 
 func (r *ReviewRepository) Create(ctx context.Context, review *domain.Review) error {
-	return r.db.GetContext(ctx, review, "INSERT INTO reviews (id, book_id, user_id, rating, title, content) VALUES ($1, $2, $3, $4, $5, $6)", review.ID, review.BookID, review.UserID, review.Rating, review.Title, review.Content)
+	return r.db.GetContext(ctx, review, "INSERT INTO reviews (id, book_id, user_id, rating, title, content) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *", review.ID, review.BookID, review.UserID, review.Rating, review.Title, review.Content)
 }
 
 func (r *ReviewRepository) GetByID(ctx context.Context, id string) (*domain.Review, error) {

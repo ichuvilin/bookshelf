@@ -29,7 +29,7 @@ func main() {
 
 	log.Println("Connected to database")
 
-	authClient := client.NewAuthClient(cfg.AuthServiceURL, 10*time.Second, cfg.ServiceKey)
+	authClient := client.NewAuthClient(cfg.AuthServiceURL, 10*time.Second, cfg.ServiceKey, cfg.AuthServiceRetries, cfg.AuthServiceTimeout)
 
 	bookRepo := repository.NewBookRepository(db)
 	reviewRepo := repository.NewReviewRepository(db)

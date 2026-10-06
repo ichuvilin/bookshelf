@@ -3,13 +3,17 @@ package config
 import (
 	"fmt"
 	"os"
+	"strconv"
+	"time"
 )
 
 type Config struct {
-	Port           string
-	DatabaseURL    string
-	AuthServiceURL string
-	ServiceKey     string
+	Port               string
+	DatabaseURL        string
+	AuthServiceURL     string
+	ServiceKey         string
+	AuthServiceTimeout time.Duration
+	AuthServiceRetries int
 }
 
 func Load() *Config {
@@ -32,10 +36,26 @@ func Load() *Config {
 		svcKey = "dev-service-key"
 	}
 
+	authServiceTimeout := 5 * time.Second
+	if value := os.Getenv("AUTH_SERVICE_TIMEOUT"); value != "" {
+		if parsed, err := time.ParseDuration(value); err == nil {
+			authServiceTimeout = parsed
+		}
+	}
+
+	authServiceRetries := 3
+	if value := os.Getenv("AUTH_SERVICE_RETRIES"); value != "" {
+		if parsed, err := strconv.Atoi(value); err == nil {
+			authServiceRetries = parsed
+		}
+	}
+
 	return &Config{
-		Port:           fmt.Sprintf(":%s", port),
-		DatabaseURL:    dbUrl,
-		AuthServiceURL: authServiceURL,
-		ServiceKey:     svcKey,
+		Port:               fmt.Sprintf(":%s", port),
+		DatabaseURL:        dbUrl,
+		AuthServiceURL:     authServiceURL,
+		ServiceKey:         svcKey,
+		AuthServiceTimeout: authServiceTimeout,
+		AuthServiceRetries: authServiceRetries,
 	}
 }

@@ -26,14 +26,17 @@ type UserPublic struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-func NewAuthClient(baseURL string, timeout time.Duration, serviceKey string) *AuthClient {
+func NewAuthClient(baseURL string, timeout time.Duration, serviceKey string, maxRetries int, retryDelay time.Duration) *AuthClient {
 	return &AuthClient{
-		httpClient: NewHTTPClient(baseURL, timeout),
+		httpClient: NewHTTPClient(baseURL, timeout, 3, 10*time.Second),
 		serviceKey: serviceKey,
 	}
 }
 
 func (c *AuthClient) VerifyToken(ctx context.Context, token string) (*VerifyResponse, error) {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
 	type verifyRequest struct {
 		Token string `json:"token"`
 	}
@@ -62,6 +65,9 @@ func (c *AuthClient) VerifyToken(ctx context.Context, token string) (*VerifyResp
 }
 
 func (c *AuthClient) GetUsersByIDs(ctx context.Context, ids []string) ([]UserPublic, error) {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
 	type batchIDsRequest struct {
 		IDs []string `json:"ids"`
 	}
@@ -81,9 +87,9 @@ func (c *AuthClient) GetUsersByIDs(ctx context.Context, ids []string) ([]UserPub
 	type batchUsersResponse struct {
 		Users []UserPublic `json:"users"`
 	}
+	defer resp.Body.Close()
 
 	var result batchUsersResponse
-
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, err
 	}
