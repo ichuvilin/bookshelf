@@ -58,16 +58,37 @@ func (s *BookService) Create(ctx context.Context, userID string, req domain.Crea
 	return book, nil
 }
 
-func (s *BookService) GetByID(ctx context.Context, id string) (*domain.Book, error) {
-	return s.repo.GetByID(ctx, id)
+func (s *BookService) GetByID(ctx context.Context, id string) (*domain.BookResponse, error) {
+	book, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return book.ToResponse(), err
 }
 
-func (s *BookService) List(ctx context.Context, params domain.ListParams) ([]domain.Book, int, error) {
-	return s.repo.List(ctx, params)
+func (s *BookService) List(ctx context.Context, params domain.ListParams) ([]*domain.BookResponse, int, error) {
+	books, i, err := s.repo.List(ctx, params)
+	if err != nil {
+		return nil, 0, err
+	}
+	booksResponse := make([]*domain.BookResponse, 0, len(books))
+	for _, book := range books {
+		booksResponse = append(booksResponse, book.ToResponse())
+	}
+	return booksResponse, i, err
 }
 
-func (s *BookService) ListByUser(ctx context.Context, userID string, params domain.ListParams) ([]domain.Book, int, error) {
-	return s.repo.ListByUserID(ctx, userID, params)
+func (s *BookService) ListByUser(ctx context.Context, userID string, params domain.ListParams) ([]*domain.BookResponse, int, error) {
+	books, i, err := s.repo.ListByUserID(ctx, userID, params)
+	if err != nil {
+		return nil, 0, err
+	}
+	booksResponse := make([]*domain.BookResponse, 0, len(books))
+	for _, book := range books {
+		booksResponse = append(booksResponse, book.ToResponse())
+	}
+	return booksResponse, i, err
 }
 
 func (s *BookService) Update(ctx context.Context, userID string, id string, req domain.UpdateBookRequest) (*domain.Book, error) {
