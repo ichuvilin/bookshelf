@@ -22,6 +22,13 @@ type Check struct {
 	Error    string `json:"error,omitempty"`
 }
 
+type ReadyResponse struct {
+	Ready     bool             `json:"ready"`
+	Service   string           `json:"service"`
+	Checks    map[string]Check `json:"checks"`
+	Timestamp string           `json:"timestamp"`
+}
+
 type HealthHandler struct {
 	db      *sqlx.DB
 	version string
@@ -59,6 +66,35 @@ func (h *HealthHandler) Health(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, httpStatus, response)
+}
+
+func (h *HealthHandler) Ready(w http.ResponseWriter, r *http.Request) {
+	checks := map[string]Check{
+		"database": h.checkDatabase(),
+	}
+
+	allReady := true
+
+	for _, check := range checks {
+		if check.Status != "ok" {
+			allReady = false
+			break
+		}
+	}
+
+	status := http.StatusOK
+	if !allReady {
+		status = http.StatusServiceUnavailable
+	}
+
+	response := ReadyResponse{
+		Ready:     allReady,
+		Service:   "auth-service",
+		Checks:    checks,
+		Timestamp: time.Now().Format(time.RFC3339),
+	}
+
+	writeJSON(w, status, response)
 }
 
 func (h *HealthHandler) checkDatabase() Check {

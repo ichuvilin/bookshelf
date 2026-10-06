@@ -6,7 +6,6 @@ import (
 	"bookshelf/books-service/internal/handler"
 	"bookshelf/books-service/internal/repository"
 	"bookshelf/books-service/internal/service"
-	"encoding/json"
 	"log"
 	"net/http"
 	"time"
@@ -39,7 +38,7 @@ func main() {
 
 	bookHandler := handler.NewBookHandler(bookSvc)
 	reviewHandler := handler.NewReviewHandler(reviewSvc)
-	healthHandler := handler.NewHealthHandler(db, "1.0.0")
+	healthHandler := handler.NewHealthHandler(db, "1.0.0", authClient)
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
@@ -54,6 +53,7 @@ func main() {
 	}))
 
 	r.Get("/health", healthHandler.Health)
+	r.Get("/ready", healthHandler.Ready)
 
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Get("/books", bookHandler.List)
@@ -71,16 +71,6 @@ func main() {
 			r.Put("/reviews/{id}", reviewHandler.Update)
 			r.Delete("/reviews/{id}", reviewHandler.Delete)
 		})
-	})
-
-	r.Get("/ready", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(map[string]string{
-			"status":  "ok",
-			"service": "books-service",
-		}); err != nil {
-			return
-		}
 	})
 
 	err = http.ListenAndServe(cfg.Port, r)

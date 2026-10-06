@@ -3,6 +3,8 @@ package client
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"net/http"
 	"time"
 )
 
@@ -24,6 +26,20 @@ type UserPublic struct {
 	Email     string    `json:"email"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+}
+
+type HealthResponse struct {
+	Status    string           `json:"status"` // "ok", "unhealthy"
+	Service   string           `json:"service"`
+	Version   string           `json:"version"`
+	Checks    map[string]Check `json:"checks"`
+	Timestamp string           `json:"timestamp"`
+}
+
+type Check struct {
+	Status   string `json:"status"`   // "ok", "error"
+	Duration string `json:"duration"` // "2ms"
+	Error    string `json:"error,omitempty"`
 }
 
 func NewAuthClient(baseURL string, timeout time.Duration, serviceKey string, maxRetries int, retryDelay time.Duration) *AuthClient {
@@ -95,4 +111,32 @@ func (c *AuthClient) GetUsersByIDs(ctx context.Context, ids []string) ([]UserPub
 	}
 
 	return result.Users, nil
+}
+
+func (c *AuthClient) Health(ctx context.Context) (*HealthResponse, error) {
+	resp, err := c.httpClient.Get(
+		ctx,
+		"/health",
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf(
+			"unexpected auth-service health status: %d",
+			resp.StatusCode,
+		)
+	}
+
+	var result HealthResponse
+
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
 }

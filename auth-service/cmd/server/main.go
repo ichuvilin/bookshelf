@@ -50,7 +50,7 @@ func main() {
 	}))
 
 	r.Get("/health", healthHandler.Health)
-	r.Get("/ready", h.Ready)
+	r.Get("/ready", healthHandler.Ready)
 
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Post("/auth/register", h.Register)
