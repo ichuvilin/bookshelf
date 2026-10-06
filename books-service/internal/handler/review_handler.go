@@ -47,8 +47,14 @@ func (h *ReviewHandler) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	reviewsResp := make([]*domain.ReviewResponse, 0, len(reviews))
+
+	for _, review := range reviews {
+		reviewsResp = append(reviewsResp, review.ToResponse())
+	}
+
 	WriteJSON(w, http.StatusOK, domain.ReviewListResponse{
-		Data:  reviews,
+		Data:  reviewsResp,
 		Total: len(reviews),
 	})
 }

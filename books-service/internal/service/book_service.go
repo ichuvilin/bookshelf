@@ -37,6 +37,20 @@ func (s *BookService) Create(ctx context.Context, userID string, req domain.Crea
 		}
 	}
 
+	if req.PublishedYear != nil {
+		book.PublishedYear = sql.NullInt32{
+			Int32: *req.PublishedYear,
+			Valid: true,
+		}
+	}
+
+	if req.ISBN != nil {
+		book.ISBN = sql.NullString{
+			String: *req.ISBN,
+			Valid:  true,
+		}
+	}
+
 	if err := s.repo.Create(ctx, book); err != nil {
 		return nil, err
 	}

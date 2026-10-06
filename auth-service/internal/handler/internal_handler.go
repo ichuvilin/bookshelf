@@ -30,17 +30,18 @@ func (h *InternalHandler) VerifyToken(w http.ResponseWriter, r *http.Request) {
 
 	err := decodeJSON(r, &req)
 	if err != nil {
-		writeError(w, r, http.StatusInternalServerError, "500", err.Error())
+		writeJSON(w, http.StatusBadRequest, VerifyResponse{
+			Valid: false,
+			Error: err.Error(),
+		})
 		return
 	}
 
 	token, err := h.svc.ValidateToken(req.Token)
 	if err != nil {
 		writeJSON(w, http.StatusBadRequest, VerifyResponse{
-			Valid:     false,
-			UserID:    "",
-			ExpiresAt: time.Time{},
-			Error:     err.Error(),
+			Valid: false,
+			Error: err.Error(),
 		})
 		return
 	}

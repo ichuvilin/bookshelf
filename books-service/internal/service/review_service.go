@@ -4,6 +4,7 @@ import (
 	"bookshelf/books-service/internal/domain"
 	"bookshelf/books-service/internal/repository"
 	"context"
+	"database/sql"
 	"errors"
 
 	"github.com/google/uuid"
@@ -38,8 +39,13 @@ func (s *ReviewService) Create(ctx context.Context, userID string, bookID string
 		BookID:  bookID,
 		UserID:  userID,
 		Rating:  req.Rating,
-		Title:   req.Title,
 		Content: req.Content,
+	}
+	if req.Title != nil {
+		review.Title = sql.NullString{
+			String: *req.Title,
+			Valid:  true,
+		}
 	}
 	err = s.reviewRepo.Create(ctx, review)
 	if err != nil {
@@ -67,7 +73,10 @@ func (s *ReviewService) Update(ctx context.Context, userID string, id string, re
 	}
 
 	if req.Title != nil {
-		review.Title = *req.Title
+		review.Title = sql.NullString{
+			String: *req.Title,
+			Valid:  true,
+		}
 	}
 
 	if req.Rating != nil {

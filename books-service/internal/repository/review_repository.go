@@ -78,8 +78,12 @@ func (r *ReviewRepository) Update(ctx context.Context, review *domain.Review) er
 		WHERE id = $4
 		RETURNING *
 	`
+	var title string
+	if review.Title.Valid {
+		title = review.Title.String
+	}
 
-	return r.db.GetContext(ctx, query, review.Title, review.Rating, review.Content, review.ID)
+	return r.db.GetContext(ctx, query, title, review.Rating, review.Content, review.ID)
 }
 
 func (r *ReviewRepository) Delete(ctx context.Context, id string) error {

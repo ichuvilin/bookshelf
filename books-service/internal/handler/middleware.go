@@ -3,6 +3,7 @@ package handler
 import (
 	"bookshelf/books-service/internal/client"
 	"context"
+	"log"
 	"net/http"
 	"strings"
 )
@@ -44,6 +45,7 @@ func AuthMiddleware(authClient *client.AuthClient) func(http.Handler) http.Handl
 
 			resp, err := authClient.VerifyToken(r.Context(), token)
 			if err != nil {
+				log.Println(err)
 				WriteError(
 					w,
 					r,

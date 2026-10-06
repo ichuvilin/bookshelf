@@ -29,13 +29,13 @@ func (h *BookHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	userID := getUserID(r.Context())
 
-	bookResponse, err := h.svc.Create(r.Context(), userID, req)
+	book, err := h.svc.Create(r.Context(), userID, req)
 	if err != nil {
 		WriteError(w, r, http.StatusBadRequest, "400", err.Error())
 		return
 	}
 
-	WriteJSON(w, http.StatusCreated, bookResponse)
+	WriteJSON(w, http.StatusCreated, book.ToResponse())
 }
 
 func (h *BookHandler) GetByID(w http.ResponseWriter, r *http.Request) {
@@ -92,8 +92,13 @@ func (h *BookHandler) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	booksRep := make([]domain.BookResponse, 0, len(books))
+	for _, book := range books {
+		booksRep = append(booksRep, *book.ToResponse())
+	}
+
 	WriteJSON(w, http.StatusOK, domain.BookListResponse{
-		Data:       books,
+		Data:       booksRep,
 		Pagination: domain.NewPagination(page, limit, total),
 	})
 }

@@ -42,19 +42,20 @@ func (c *AuthClient) VerifyToken(ctx context.Context, token string) (*VerifyResp
 		Token string `json:"token"`
 	}
 
-	body, err := json.Marshal(verifyRequest{
-		Token: token,
-	})
+	resp, err := c.httpClient.Post(
+		ctx,
+		"/internal/v1/auth/verify",
+		verifyRequest{
+			Token: token,
+		},
+		map[string]string{
+			"X-Service-Key": c.serviceKey,
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
-
-	resp, err := c.httpClient.Post(ctx, "/internal/v1/auth/verify", body, map[string]string{
-		"X-Service-Key": c.serviceKey,
-	})
-	if err != nil {
-		return nil, err
-	}
+	defer resp.Body.Close()
 
 	var result VerifyResponse
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
