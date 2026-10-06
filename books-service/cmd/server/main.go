@@ -38,7 +38,7 @@ func main() {
 	bookHandler := handler.NewBookHandler(bookSvc)
 	reviewHandler := handler.NewReviewHandler(reviewSvc)
 
-	_ = client.NewHTTPClient(cfg.AuthServiceURL, 5*time.Second)
+	authClient := client.NewAuthClient(cfg.AuthServiceURL, 10*time.Second)
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
@@ -54,15 +54,20 @@ func main() {
 
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Get("/books", bookHandler.List)
-		r.Post("/books", bookHandler.Create)
 		r.Get("/books/{id}", bookHandler.GetByID)
-		r.Put("/books/{id}", bookHandler.Update)
-		r.Delete("/books/{id}", bookHandler.Delete)
-
-		r.Post("/books/{book_id}/reviews", reviewHandler.Create)
 		r.Get("/books/{book_id}/reviews", reviewHandler.List)
-		r.Put("/reviews/{id}", reviewHandler.Update)
-		r.Delete("/reviews/{id}", reviewHandler.Delete)
+
+		r.Group(func(r chi.Router) {
+			r.Use(handler.AuthMiddleware(authClient))
+
+			r.Post("/books", bookHandler.Create)
+			r.Put("/books/{id}", bookHandler.Update)
+			r.Delete("/books/{id}", bookHandler.Delete)
+
+			r.Post("/books/{book_id}/reviews", reviewHandler.Create)
+			r.Put("/reviews/{id}", reviewHandler.Update)
+			r.Delete("/reviews/{id}", reviewHandler.Delete)
+		})
 	})
 
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {

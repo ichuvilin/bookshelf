@@ -12,7 +12,7 @@ func decodeJSON(r *http.Request, v interface{}) error {
 	return json.NewDecoder(r.Body).Decode(v)
 }
 
-func writeJSON(w http.ResponseWriter, status int, data interface{}) {
+func WriteJSON(w http.ResponseWriter, status int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 
@@ -21,14 +21,14 @@ func writeJSON(w http.ResponseWriter, status int, data interface{}) {
 	}
 }
 
-func writeError(w http.ResponseWriter, r *http.Request, status int, code, message string) {
+func WriteError(w http.ResponseWriter, r *http.Request, status int, code, message string) {
 	requestID := ""
 
 	if value := r.Context().Value(middleware.RequestIDKey); value != nil {
 		requestID, _ = value.(string)
 	}
 
-	writeJSON(w, status, map[string]any{
+	WriteJSON(w, status, map[string]any{
 		"error": domain.ErrorResponse{
 			Code:      code,
 			Message:   message,

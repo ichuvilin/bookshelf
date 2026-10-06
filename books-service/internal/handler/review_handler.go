@@ -23,17 +23,19 @@ func (h *ReviewHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var req domain.CreateReviewRequest
 	err := decodeJSON(r, &req)
 	if err != nil {
-		writeError(w, r, http.StatusInternalServerError, "500", err.Error())
+		WriteError(w, r, http.StatusInternalServerError, "500", err.Error())
 		return
 	}
 
-	review, err := h.svc.Create(r.Context(), req.UserID, bookID, req)
+	userID := getUserID(r.Context())
+
+	review, err := h.svc.Create(r.Context(), userID, bookID, req)
 	if err != nil {
-		writeError(w, r, http.StatusBadRequest, "400", err.Error())
+		WriteError(w, r, http.StatusBadRequest, "400", err.Error())
 		return
 	}
 
-	writeJSON(w, http.StatusOK, review)
+	WriteJSON(w, http.StatusOK, review)
 }
 
 func (h *ReviewHandler) List(w http.ResponseWriter, r *http.Request) {
@@ -41,11 +43,11 @@ func (h *ReviewHandler) List(w http.ResponseWriter, r *http.Request) {
 
 	reviews, err := h.svc.ListByBook(r.Context(), bookID)
 	if err != nil {
-		writeError(w, r, http.StatusBadRequest, "400", err.Error())
+		WriteError(w, r, http.StatusBadRequest, "400", err.Error())
 		return
 	}
 
-	writeJSON(w, http.StatusOK, domain.ReviewListResponse{
+	WriteJSON(w, http.StatusOK, domain.ReviewListResponse{
 		Data:  reviews,
 		Total: len(reviews),
 	})
@@ -53,50 +55,41 @@ func (h *ReviewHandler) List(w http.ResponseWriter, r *http.Request) {
 
 func (h *ReviewHandler) Update(w http.ResponseWriter, r *http.Request) {
 	reviewID := chi.URLParam(r, "id")
+	userID := getUserID(r.Context())
 
 	var req domain.UpdateReviewRequest
 	err := decodeJSON(r, &req)
 	if err != nil {
-		writeError(w, r, http.StatusInternalServerError, "500", err.Error())
+		WriteError(w, r, http.StatusInternalServerError, "500", err.Error())
 		return
 	}
 
-	response, err := h.svc.Update(r.Context(), req.UserID, reviewID, req)
+	response, err := h.svc.Update(r.Context(), userID, reviewID, req)
 	if err != nil {
 		if errors.Is(err, service.ErrNotReviewOwner) {
-			writeError(w, r, http.StatusForbidden, "403", err.Error())
+			WriteError(w, r, http.StatusForbidden, "403", err.Error())
 			return
 		}
-		writeError(w, r, http.StatusBadRequest, "400", err.Error())
+		WriteError(w, r, http.StatusBadRequest, "400", err.Error())
 		return
 	}
 
-	writeJSON(w, http.StatusOK, response)
+	WriteJSON(w, http.StatusOK, response)
 }
 
 func (h *ReviewHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	reviewID := chi.URLParam(r, "id")
+	userID := getUserID(r.Context())
 
-	type userRequest struct {
-		UserID string `json:"user_id"`
-	}
-
-	var req userRequest
-	err := decodeJSON(r, &req)
-	if err != nil {
-		writeError(w, r, http.StatusInternalServerError, "500", err.Error())
-		return
-	}
-
-	err = h.svc.Delete(r.Context(), req.UserID, reviewID)
+	err := h.svc.Delete(r.Context(), userID, reviewID)
 	if err != nil {
 		if errors.Is(err, service.ErrNotReviewOwner) {
-			writeError(w, r, http.StatusForbidden, "403", err.Error())
+			WriteError(w, r, http.StatusForbidden, "403", err.Error())
 			return
 		}
-		writeError(w, r, http.StatusBadRequest, "400", err.Error())
+		WriteError(w, r, http.StatusBadRequest, "400", err.Error())
 		return
 	}
 
-	writeJSON(w, http.StatusNoContent, nil)
+	WriteJSON(w, http.StatusNoContent, nil)
 }

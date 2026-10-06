@@ -22,14 +22,12 @@ type CreateBookRequest struct {
 	Title       string  `json:"title,omitempty"`
 	Author      string  `json:"author,omitempty"`
 	Description *string `json:"description"`
-	UserID      string  `json:"user_id"`
 }
 
 type UpdateBookRequest struct {
 	Title       *string `json:"title" db:"title"`
 	Description *string `json:"description" db:"description"`
 	Author      *string `json:"author" db:"author"`
-	UserID      string  `json:"user_id"`
 }
 
 type BookListResponse struct {
