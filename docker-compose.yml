@@ -35,15 +35,56 @@ services:
       timeout: 5s
       retries: 5
 
+  # Auth Service
+  auth-service:
+    build: ./auth-service
+    ports:
+      - "8081:8081"
+    environment:
+      PORT: 8081
+      DATABASE_URL: postgres://postgres:postgres@auth-postgres:5432/auth?sslmode=disable
+      SERVICE_KEY: dev-service-key
+    depends_on:
+      auth-postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # Books Service
+  books-service:
+    build: ./books-service
+    ports:
+      - "8082:8082"
+    environment:
+      PORT: 8082
+      DATABASE_URL: postgres://postgres:postgres@books-postgres:5432/books?sslmode=disable
+      AUTH_SERVICE_URL: http://auth-service:8081
+      SERVICE_KEY: dev-service-key
+    depends_on:
+      books-postgres:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8082/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
   # Frontend Application
   frontend:
     build: ./frontend
     ports:
       - "5174:80"
     depends_on:
-      auth-postgres:
+      auth-service:
         condition: service_healthy
-      books-postgres:
+      books-service:
         condition: service_healthy
 
 volumes:
