@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"bookshelf/books-service/internal/client"
 	"database/sql"
 	"time"
 
@@ -19,14 +20,15 @@ type Review struct {
 }
 
 type ReviewResponse struct {
-	ID        uuid.UUID `json:"id"`
-	BookID    string    `json:"book_id"`
-	UserID    string    `json:"user_id"`
-	Rating    int       `json:"rating"`
-	Title     *string   `json:"title"`
-	Content   string    `json:"content"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID        uuid.UUID          `json:"id"`
+	BookID    string             `json:"book_id"`
+	UserID    string             `json:"user_id"`
+	Rating    int                `json:"rating"`
+	Title     *string            `json:"title"`
+	Content   string             `json:"content"`
+	CreatedAt time.Time          `json:"created_at"`
+	UpdatedAt time.Time          `json:"updated_at"`
+	User      *client.UserPublic `json:"user"`
 }
 
 type CreateReviewRequest struct {
@@ -46,7 +48,7 @@ type ReviewListResponse struct {
 	Total int               `json:"total"`
 }
 
-func (r *Review) ToResponse() *ReviewResponse {
+func (r *Review) ToResponse(user *client.UserPublic) *ReviewResponse {
 	var title *string
 	if r.Title.Valid {
 		title = &r.Title.String
@@ -61,5 +63,6 @@ func (r *Review) ToResponse() *ReviewResponse {
 		Content:   r.Content,
 		CreatedAt: r.CreatedAt,
 		UpdatedAt: r.UpdatedAt,
+		User:      user,
 	}
 }

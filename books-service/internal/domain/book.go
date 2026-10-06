@@ -74,6 +74,6 @@ func (b *Book) ToResponse() *BookResponse {
 }
 
 type BookListResponse struct {
-	Data       []BookResponse `json:"data"`
-	Pagination Pagination     `json:"pagination"`
+	Data       []*BookResponse `json:"data"`
+	Pagination Pagination      `json:"pagination"`
 }

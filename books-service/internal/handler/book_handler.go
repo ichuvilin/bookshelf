@@ -92,13 +92,8 @@ func (h *BookHandler) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	booksRep := make([]domain.BookResponse, 0, len(books))
-	for _, book := range books {
-		booksRep = append(booksRep, *book.ToResponse())
-	}
-
 	WriteJSON(w, http.StatusOK, domain.BookListResponse{
-		Data:       booksRep,
+		Data:       books,
 		Pagination: domain.NewPagination(page, limit, total),
 	})
 }

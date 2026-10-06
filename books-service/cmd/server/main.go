@@ -29,16 +29,16 @@ func main() {
 
 	log.Println("Connected to database")
 
+	authClient := client.NewAuthClient(cfg.AuthServiceURL, 10*time.Second, cfg.ServiceKey)
+
 	bookRepo := repository.NewBookRepository(db)
 	reviewRepo := repository.NewReviewRepository(db)
 
 	bookSvc := service.NewBookService(bookRepo)
-	reviewSvc := service.NewReviewService(reviewRepo, bookRepo)
+	reviewSvc := service.NewReviewService(reviewRepo, bookRepo, authClient)
 
 	bookHandler := handler.NewBookHandler(bookSvc)
 	reviewHandler := handler.NewReviewHandler(reviewSvc)
-
-	authClient := client.NewAuthClient(cfg.AuthServiceURL, 10*time.Second, cfg.ServiceKey)
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)

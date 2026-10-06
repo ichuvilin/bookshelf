@@ -1,6 +1,7 @@
 package service
 
 import (
+	"bookshelf/books-service/internal/client"
 	"bookshelf/books-service/internal/domain"
 	"bookshelf/books-service/internal/repository"
 	"context"
@@ -18,10 +19,11 @@ var (
 type ReviewService struct {
 	reviewRepo *repository.ReviewRepository
 	bookRepo   *repository.BookRepository
+	authClient *client.AuthClient
 }
 
-func NewReviewService(reviewRepo *repository.ReviewRepository, bookRepo *repository.BookRepository) *ReviewService {
-	return &ReviewService{reviewRepo: reviewRepo, bookRepo: bookRepo}
+func NewReviewService(reviewRepo *repository.ReviewRepository, bookRepo *repository.BookRepository, authClient *client.AuthClient) *ReviewService {
+	return &ReviewService{reviewRepo: reviewRepo, bookRepo: bookRepo, authClient: authClient}
 }
 
 func (s *ReviewService) Create(ctx context.Context, userID string, bookID string, req domain.CreateReviewRequest) (*domain.Review, error) {
@@ -59,8 +61,31 @@ func (s *ReviewService) GetByID(ctx context.Context, id string) (*domain.Review,
 	return s.reviewRepo.GetByID(ctx, id)
 }
 
-func (s *ReviewService) ListByBook(ctx context.Context, bookID string) ([]domain.Review, error) {
-	return s.reviewRepo.ListByBookID(ctx, bookID)
+func (s *ReviewService) ListByBook(ctx context.Context, bookID string) ([]*domain.ReviewResponse, error) {
+	reviews, err := s.reviewRepo.ListByBookID(ctx, bookID)
+	if err != nil {
+		return nil, err
+	}
+	userIDS := make([]string, 0, len(reviews))
+	for _, review := range reviews {
+		userIDS = append(userIDS, review.UserID)
+	}
+
+	users, err := s.authClient.GetUsersByIDs(ctx, userIDS)
+	if err != nil {
+		return nil, err
+	}
+	idToSum := make(map[string]*client.UserPublic)
+	for _, user := range users {
+		idToSum[user.ID] = &user
+	}
+
+	reviewsResp := make([]*domain.ReviewResponse, 0, len(reviews))
+
+	for _, review := range reviews {
+		reviewsResp = append(reviewsResp, review.ToResponse(idToSum[review.UserID]))
+	}
+	return reviewsResp, err
 }
 
 func (s *ReviewService) Update(ctx context.Context, userID string, id string, req domain.UpdateReviewRequest) (*domain.Review, error) {

@@ -70,25 +70,27 @@ func (c *AuthClient) GetUsersByIDs(ctx context.Context, ids []string) ([]UserPub
 		IDs []string `json:"ids"`
 	}
 
-	body, err := json.Marshal(batchIDsRequest{
-		IDs: ids,
-	})
+	resp, err := c.httpClient.Post(
+		ctx,
+		"/internal/v1/users/batch",
+		batchIDsRequest{
+			IDs: ids,
+		},
+		map[string]string{
+			"X-Service-Key": c.serviceKey,
+		})
 	if err != nil {
 		return nil, err
 	}
-
-	resp, err := c.httpClient.Post(ctx, "/internal/v1/users/batch", body, map[string]string{
-		"X-Service-Key": c.serviceKey,
-	})
-	if err != nil {
-		return nil, err
+	type batchUsersResponse struct {
+		Users []UserPublic `json:"users"`
 	}
 
-	var result []UserPublic
+	var result batchUsersResponse
 
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, err
 	}
 
-	return result, nil
+	return result.Users, nil
 }
