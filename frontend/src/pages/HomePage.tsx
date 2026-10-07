@@ -56,15 +56,15 @@ export function HomePage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Показываем заглушку, если books-service не реализован
+  // Показываем заглушку, если books-service не запущен
   if (isError && isFeatureNotImplemented(error)) {
     const booksFeature = FEATURE_STAGES.books;
     return (
       <FeatureLocked
         title={`${booksFeature.icon} ${booksFeature.name}`}
-        description={booksFeature.description}
-        stage={booksFeature.stage}
-        hint={booksFeature.hint}
+        description="books-service должен быть запущен для отображения каталога"
+        stage={0}
+        hint="Запусти docker-compose up или go run ./cmd/server в books-service"
         serviceName="books-service"
       />
     );

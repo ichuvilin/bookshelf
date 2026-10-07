@@ -12,7 +12,7 @@ export function Footer() {
 
         <ServiceStatus />
 
-        <p className="text-sm text-muted-foreground">Проект 2: Microservices</p>
+        <p className="text-sm text-muted-foreground">Проект 3: Event-Driven</p>
       </div>
     </footer>
   );

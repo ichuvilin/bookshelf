@@ -35,58 +35,55 @@ services:
       timeout: 5s
       retries: 5
 
-  # Auth Service
-  auth-service:
-    build: ./auth-service
-    ports:
-      - "8081:8081"
+  # RabbitMQ Message Broker
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
     environment:
-      PORT: 8081
-      DATABASE_URL: postgres://postgres:postgres@auth-postgres:5432/auth?sslmode=disable
-      SERVICE_KEY: dev-service-key
-    depends_on:
-      auth-postgres:
-        condition: service_healthy
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"   # AMQP
+      - "15672:15672" # Management UI
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/health"]
+      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 10s
 
-  # Books Service
-  books-service:
-    build: ./books-service
-    ports:
-      - "8082:8082"
+  # MinIO Object Storage
+  minio:
+    image: quay.io/minio/aistor/minio:latest
+    command: server /data --console-address ":9001" --license /minio.license
     environment:
-      PORT: 8082
-      DATABASE_URL: postgres://postgres:postgres@books-postgres:5432/books?sslmode=disable
-      AUTH_SERVICE_URL: http://auth-service:8081
-      SERVICE_KEY: dev-service-key
-    depends_on:
-      books-postgres:
-        condition: service_healthy
-      auth-service:
-        condition: service_healthy
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"   # API
+      - "9001:9001"   # Console
+    volumes:
+      - minio_data:/data
+      - ./minio.license:/minio.license:ro
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8082/health"]
+      test: ["CMD", "mc", "ready", "local"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 10s
 
   # Frontend Application
   frontend:
     build: ./frontend
     ports:
-      - "5174:80"
+      - "5175:80"
     depends_on:
-      auth-service:
+      auth-postgres:
         condition: service_healthy
-      books-service:
+      books-postgres:
         condition: service_healthy
 
 volumes:
   auth_postgres_data:
   books_postgres_data:
+  rabbitmq_data:
+  minio_data:
