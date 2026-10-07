@@ -4,6 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"path/filepath"
+	"strings"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
@@ -116,4 +119,60 @@ func (c *MinIOClient) HealthCheck(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (c *MinIOClient) UploadFile(ctx context.Context, objectName string, reader io.Reader, size int64, contentType string) error {
+	_, err := c.client.PutObject(
+		ctx,
+		c.bucket,
+		objectName,
+		reader,
+		size,
+		minio.PutObjectOptions{
+			ContentType: contentType,
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("upload file %q: %w", objectName, err)
+	}
+
+	return nil
+}
+
+func (c *MinIOClient) GetFileURL(objectName string) string {
+	return fmt.Sprintf(
+		"%s/%s/%s",
+		strings.TrimRight(c.publicEndpoint, "/"),
+		c.bucket,
+		strings.TrimLeft(objectName, "/"),
+	)
+}
+
+func (c *MinIOClient) DeleteFile(ctx context.Context, objectName string) error {
+	err := c.client.RemoveObject(
+		ctx,
+		c.bucket,
+		objectName,
+		minio.RemoveObjectOptions{},
+	)
+	if err != nil {
+		return fmt.Errorf("delete file %q: %w", objectName, err)
+	}
+
+	return nil
+}
+
+func GetContentType(filename string) string {
+	switch strings.ToLower(filepath.Ext(filename)) {
+	case ".jpg", ".jpeg":
+		return "image/jpeg"
+	case ".png":
+		return "image/png"
+	case ".webp":
+		return "image/webp"
+	case ".gif":
+		return "image/gif"
+	default:
+		return "application/octet-stream"
+	}
 }
