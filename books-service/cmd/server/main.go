@@ -40,6 +40,12 @@ func main() {
 	reviewHandler := handler.NewReviewHandler(reviewSvc)
 	healthHandler := handler.NewHealthHandler(db, "1.0.0", authClient)
 
+	rabbit, err := client.NewRabbitMQClient("amqp://guest:guest@localhost:5672/")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rabbit.Close()
+
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
