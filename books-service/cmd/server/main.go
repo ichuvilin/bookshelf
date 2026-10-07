@@ -30,6 +30,11 @@ func main() {
 
 	authClient := client.NewAuthClient(cfg.AuthServiceURL, 10*time.Second, cfg.ServiceKey, cfg.AuthServiceRetries, cfg.AuthServiceTimeout)
 
+	ioClient, err := client.NewMinIOClient(cfg.MinIOEndpoint, cfg.MinIOAccessKey, cfg.MinIOSecretKey, cfg.MinioBucket, cfg.MinIOPublicEndpoint, cfg.MinIOUseSSL)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	bookRepo := repository.NewBookRepository(db)
 	reviewRepo := repository.NewReviewRepository(db)
 
@@ -38,7 +43,7 @@ func main() {
 
 	bookHandler := handler.NewBookHandler(bookSvc)
 	reviewHandler := handler.NewReviewHandler(reviewSvc)
-	healthHandler := handler.NewHealthHandler(db, "1.0.0", authClient)
+	healthHandler := handler.NewHealthHandler(db, "1.0.0", authClient, ioClient)
 
 	rabbit, err := client.NewRabbitMQClient("amqp://guest:guest@localhost:5672/")
 	if err != nil {
