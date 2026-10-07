@@ -38,7 +38,7 @@ func NewRabbitMQClient(url string) (*RabbitMQClient, error) {
 	return &RabbitMQClient{
 		conn:    conn,
 		channel: ch,
-	}, err
+	}, nil
 }
 
 func (c *RabbitMQClient) DeclareQueue(name string) error {
