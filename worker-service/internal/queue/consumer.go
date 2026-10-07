@@ -1,6 +1,7 @@
 package queue
 
 import (
+	"errors"
 	"log"
 
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -13,6 +14,22 @@ type Consumer struct {
 }
 
 type HandlerFunc func(body []byte) error
+
+type TemporaryError struct {
+	Err error
+}
+
+func (e *TemporaryError) Error() string {
+	return e.Err.Error()
+}
+
+func (e *TemporaryError) Unwrap() error {
+	return e.Err
+}
+
+func NewTemporaryError(err error) error {
+	return &TemporaryError{Err: err}
+}
 
 func NewConsumer(url string) (*Consumer, error) {
 	conn, err := amqp.Dial(url)
@@ -78,11 +95,43 @@ func (c *Consumer) consume(
 	for msg := range msgs {
 		log.Printf("received message from queue %q: %s", queue, string(msg.Body))
 
-		if err := handler(msg.Body); err != nil {
+		err := handler(msg.Body)
+		if err == nil {
+			msg.Ack(false)
+			continue
+		}
+
+		var temporaryErr *TemporaryError
+
+		if errors.As(err, &temporaryErr) {
 			log.Printf(
-				"handler failed for queue %q: %v",
+				"temporary error processing message from queue %q: %v",
 				queue,
 				err,
+			)
+
+			if nackErr := msg.Nack(false, true); nackErr != nil {
+				log.Printf(
+					"failed to nack message from queue %q: %v",
+					queue,
+					nackErr,
+				)
+			}
+
+			continue
+		}
+
+		log.Printf(
+			"permanent error processing message from queue %q: %v",
+			queue,
+			err,
+		)
+
+		if nackErr := msg.Nack(false, false); nackErr != nil {
+			log.Printf(
+				"failed to nack message from queue %q: %v",
+				queue,
+				nackErr,
 			)
 		}
 	}
