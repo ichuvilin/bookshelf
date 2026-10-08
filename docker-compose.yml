@@ -75,7 +75,7 @@ services:
   frontend:
     build: ./frontend
     ports:
-      - "5175:80"
+      - "5174:80"
     depends_on:
       auth-postgres:
         condition: service_healthy

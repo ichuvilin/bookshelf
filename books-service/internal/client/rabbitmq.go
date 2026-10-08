@@ -76,7 +76,7 @@ func (c *RabbitMQClient) HealthCheck() error {
 }
 
 func (c *RabbitMQClient) publish(ctx context.Context, queue string, body []byte) error {
-	if err := c.channel.PublishWithContext(ctx, "", queue, true, true, amqp.Publishing{
+	if err := c.channel.PublishWithContext(ctx, "", queue, false, false, amqp.Publishing{
 		ContentType:  "application/json",
 		DeliveryMode: amqp.Persistent,
 		Timestamp:    time.Time{},

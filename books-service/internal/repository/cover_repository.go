@@ -20,7 +20,7 @@ func (r *CoverRepository) Create(ctx context.Context, cover *domain.Cover) error
 	return r.db.GetContext(
 		ctx,
 		cover,
-		"INSERT INTO covers (id, book_id, status, original_path) VALUES ($1, $2, $3, $4) RETURNING *",
+		"INSERT INTO covers (id, book_id, status, original_path) VALUES ($1, $2, $3, $4) RETURNING id, book_id, status, original_path",
 		uuid.New(),
 		cover.BookID,
 		cover.Status,

@@ -19,13 +19,14 @@ func NewCoverHandler(svc *service.CoverService) *CoverHandler {
 }
 
 func (h *CoverHandler) UploadBookCover(w http.ResponseWriter, r *http.Request) {
-	file := http.MaxBytesReader(w, r.Body, domain.MaxCoverSize)
-	defer file.Close()
-	if err := r.ParseMultipartForm(5 << 20); err != nil {
+	r.Body = http.MaxBytesReader(w, r.Body, domain.MaxCoverSize)
+	if err := r.ParseMultipartForm(domain.MaxCoverSize); err != nil {
 		writeError(w, r, http.StatusBadRequest, "400", err.Error())
 		return
 	}
-	_, header, err := r.FormFile("file")
+	defer r.Body.Close()
+
+	file, header, err := r.FormFile("file")
 	if err != nil {
 		writeError(w, r, http.StatusInternalServerError, "500", err.Error())
 		return
