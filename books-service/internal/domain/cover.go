@@ -9,6 +9,8 @@ const (
 	CoverStatusProcessing CoverStatus = "processing"
 	CoverStatusReady      CoverStatus = "ready"
 	CoverStatusFailed     CoverStatus = "failed"
+
+	MaxCoverSize int64 = 5 * 1024 * 1024
 )
 
 type Cover struct {

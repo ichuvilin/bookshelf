@@ -26,6 +26,18 @@ type CoverService struct {
 	rabbitClient *client.RabbitMQClient
 }
 
+func NewCoverService(coverRepo *repository.CoverRepository,
+	bookRepo *repository.BookRepository,
+	minioClient *client.MinIOClient,
+	rabbitClient *client.RabbitMQClient) *CoverService {
+	return &CoverService{
+		coverRepo:    coverRepo,
+		bookRepo:     bookRepo,
+		minioClient:  minioClient,
+		rabbitClient: rabbitClient,
+	}
+}
+
 func (s *CoverService) UploadCover(ctx context.Context, userID, bookID string, file io.Reader, fileSize int64, filename string) (*domain.CoverUploadResponse, error) {
 	book, err := s.bookRepo.GetByID(ctx, bookID)
 	if err != nil {

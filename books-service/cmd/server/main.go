@@ -28,6 +28,12 @@ func main() {
 
 	log.Println("Connected to database")
 
+	rabbit, err := client.NewRabbitMQClient("amqp://guest:guest@localhost:5672/")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rabbit.Close()
+
 	authClient := client.NewAuthClient(cfg.AuthServiceURL, 10*time.Second, cfg.ServiceKey, cfg.AuthServiceRetries, cfg.AuthServiceTimeout)
 
 	ioClient, err := client.NewMinIOClient(cfg.MinIOEndpoint, cfg.MinIOAccessKey, cfg.MinIOSecretKey, cfg.MinioBucket, cfg.MinIOPublicEndpoint, cfg.MinIOUseSSL)
@@ -37,19 +43,16 @@ func main() {
 
 	bookRepo := repository.NewBookRepository(db)
 	reviewRepo := repository.NewReviewRepository(db)
+	coverRepo := repository.NewCoverRepository(db)
 
 	bookSvc := service.NewBookService(bookRepo)
 	reviewSvc := service.NewReviewService(reviewRepo, bookRepo, authClient)
+	coverSvc := service.NewCoverService(coverRepo, bookRepo, ioClient, rabbit)
 
 	bookHandler := handler.NewBookHandler(bookSvc)
 	reviewHandler := handler.NewReviewHandler(reviewSvc)
 	healthHandler := handler.NewHealthHandler(db, "1.0.0", authClient, ioClient)
-
-	rabbit, err := client.NewRabbitMQClient("amqp://guest:guest@localhost:5672/")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer rabbit.Close()
+	coverHandler := handler.NewCoverHandler(coverSvc)
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
@@ -81,6 +84,8 @@ func main() {
 			r.Post("/books/{book_id}/reviews", reviewHandler.Create)
 			r.Put("/reviews/{id}", reviewHandler.Update)
 			r.Delete("/reviews/{id}", reviewHandler.Delete)
+
+			r.Post("/books/{id}/cover", coverHandler.UploadBookCover)
 		})
 	})
 
