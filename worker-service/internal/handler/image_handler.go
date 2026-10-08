@@ -3,6 +3,7 @@ package handler
 import (
 	"bookshelf/worker-service/internal/domain"
 	"bookshelf/worker-service/internal/queue"
+	"bookshelf/worker-service/internal/repository"
 	"bookshelf/worker-service/internal/storage"
 	"bytes"
 	"context"
@@ -11,7 +12,6 @@ import (
 	"image/jpeg"
 
 	"github.com/disintegration/imaging"
-	"github.com/jmoiron/sqlx"
 )
 
 const (
@@ -23,8 +23,15 @@ const (
 )
 
 type ImageHandler struct {
-	storage *storage.MinIOStorage
-	db      *sqlx.DB
+	storage   *storage.MinIOStorage
+	coverRepo *repository.CoverRepository
+}
+
+func NewImageHandler(storage *storage.MinIOStorage, coverRepo *repository.CoverRepository) *ImageHandler {
+	return &ImageHandler{
+		storage:   storage,
+		coverRepo: coverRepo,
+	}
 }
 
 func (h *ImageHandler) HandleImageCompress(body []byte) error {
@@ -41,7 +48,18 @@ func (h *ImageHandler) HandleImageCompress(body []byte) error {
 	}
 	img, err := imaging.Decode(bytes.NewReader(file))
 	if err != nil {
-		return err
+		if updateErr := h.coverRepo.UpdateStatus(
+			ctx,
+			image.CoverID,
+			"failed",
+			"",
+			"",
+			"invalid image format",
+		); updateErr != nil {
+			return updateErr
+		}
+
+		return nil
 	}
 
 	cover := imaging.Fill(
@@ -103,6 +121,30 @@ func (h *ImageHandler) HandleImageCompress(body []byte) error {
 		return queue.NewTemporaryError(
 			fmt.Errorf("upload thumbnail: %w", err),
 		)
+	}
+
+	coverURL := h.storage.GetFileURL(coverPath)
+	thumbURL := h.storage.GetFileURL(thumbPath)
+
+	if err := h.coverRepo.UpdateStatus(
+		ctx,
+		image.CoverID,
+		"ready",
+		coverPath,
+		thumbPath,
+		"",
+	); err != nil {
+		return fmt.Errorf("update cover status: %w", err)
+	}
+
+	if err := h.coverRepo.UpdateBookCover(
+		ctx,
+		image.BookID,
+		"ready",
+		coverURL,
+		thumbURL,
+	); err != nil {
+		return err
 	}
 
 	return nil
