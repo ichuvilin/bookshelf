@@ -18,6 +18,9 @@ type Book struct {
 	PublishedYear sql.NullInt32  `json:"published_year" db:"published_year"`
 	CreatedAt     time.Time      `json:"created_at" db:"created_at"`
 	UpdatedAt     time.Time      `json:"updated_at" db:"updated_at"`
+	CoverStatus   CoverStatus    `json:"cover_status" db:"cover_status"`
+	CoverURL      string         `json:"cover_url,omitempty" db:"cover_url"`
+	ThumbURL      string         `json:"thumb_url,omitempty" db:"thumb_url"`
 }
 
 type CreateBookRequest struct {
