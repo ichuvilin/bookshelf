@@ -23,6 +23,7 @@ type Check struct {
 }
 
 type ReadyResponse struct {
+	Status    string           `json:"status"` // "ok", "error"
 	Ready     bool             `json:"ready"`
 	Service   string           `json:"service"`
 	Checks    map[string]Check `json:"checks"`
@@ -83,11 +84,14 @@ func (h *HealthHandler) Ready(w http.ResponseWriter, r *http.Request) {
 	}
 
 	status := http.StatusOK
+	svcStatus := "ok"
 	if !allReady {
 		status = http.StatusServiceUnavailable
+		svcStatus = "error"
 	}
 
 	response := ReadyResponse{
+		Status:    svcStatus,
 		Ready:     allReady,
 		Service:   "auth-service",
 		Checks:    checks,

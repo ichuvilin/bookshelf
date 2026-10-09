@@ -92,6 +92,92 @@ func (s *CoverService) UploadCover(ctx context.Context, userID, bookID string, f
 	}, nil
 }
 
+func (s *CoverService) GetCover(ctx context.Context, bookID string) (*domain.CoverResponse, error) {
+	cover, err := s.coverRepo.GetByBookID(ctx, bookID)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp domain.CoverResponse
+
+	switch cover.Status {
+	case domain.CoverStatusNone:
+		resp = domain.CoverResponse{
+			Status:  cover.Status,
+			Message: "No cover",
+		}
+	case domain.CoverStatusFailed:
+		resp = domain.CoverResponse{
+			Status:  cover.Status,
+			Message: cover.Error,
+		}
+	case domain.CoverStatusProcessing:
+		resp = domain.CoverResponse{
+			Status:  cover.Status,
+			Message: "Processing...",
+		}
+	case domain.CoverStatusReady:
+		resp = domain.CoverResponse{
+			Status:   cover.Status,
+			CoverURL: cover.CoverURL,
+			ThumbURL: cover.ThumbURL,
+		}
+	}
+
+	return &resp, nil
+}
+
+func (s *CoverService) GetCoverStatus(ctx context.Context, bookID string) (*domain.CoverStatusResponse, error) {
+	cover, err := s.coverRepo.GetByBookID(ctx, bookID)
+	if err != nil {
+		return nil, err
+	}
+	return &domain.CoverStatusResponse{
+		CoverID:     cover.ID,
+		Status:      cover.Status,
+		CoverURL:    cover.CoverURL,
+		ThumbURL:    cover.ThumbURL,
+		Error:       cover.Error,
+		CreatedAt:   cover.CreatedAt,
+		CompletedAt: cover.CompletedAt,
+	}, nil
+}
+
+func (s *CoverService) DeleteCover(ctx context.Context, userID, bookID string) error {
+	book, err := s.bookRepo.GetByID(ctx, bookID)
+	if err != nil {
+		return err
+	}
+	if book.UserID != userID {
+		return ErrNotBookOwner
+	}
+
+	cover, err := s.coverRepo.GetByBookID(ctx, bookID)
+	if err != nil {
+		return err
+	}
+
+	if err = s.minioClient.DeleteFile(ctx, cover.OriginalPath); err != nil {
+		return err
+	}
+	if err = s.minioClient.DeleteFile(ctx, cover.CoverPath); err != nil {
+		return err
+	}
+	if err = s.minioClient.DeleteFile(ctx, cover.ThumbPath); err != nil {
+		return err
+	}
+
+	if err = s.coverRepo.DeleteByBookID(ctx, bookID); err != nil {
+		return err
+	}
+
+	if err = s.coverRepo.UpdateBookCover(ctx, bookID, domain.CoverStatusNone, "", ""); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func validateImageFile(filename string, size int64) error {
 	if size > maxCoverSize {
 		return ErrMaxCoverSize
