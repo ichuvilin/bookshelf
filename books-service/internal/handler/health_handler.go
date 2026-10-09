@@ -24,6 +24,7 @@ type Check struct {
 }
 
 type ReadyResponse struct {
+	Status    string           `json:"status"` // "ok", "error"
 	Ready     bool             `json:"ready"`
 	Service   string           `json:"service"`
 	Checks    map[string]Check `json:"checks"`
@@ -49,7 +50,7 @@ func NewHealthHandler(db *sqlx.DB, version string, authClient *client.AuthClient
 func (h *HealthHandler) Health(w http.ResponseWriter, r *http.Request) {
 	checks := map[string]Check{
 		"database": h.checkDatabase(),
-		"io":       h.checkIO(),
+		"minio":    h.checkIO(),
 	}
 
 	status := "ok"
@@ -95,11 +96,14 @@ func (h *HealthHandler) Ready(w http.ResponseWriter, r *http.Request) {
 	}
 
 	status := http.StatusOK
+	svcStatus := "ok"
 	if !allReady {
 		status = http.StatusServiceUnavailable
+		svcStatus = "error"
 	}
 
 	response := ReadyResponse{
+		Status:    svcStatus,
 		Ready:     allReady,
 		Service:   "books-service",
 		Checks:    checks,
