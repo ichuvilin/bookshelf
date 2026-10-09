@@ -73,6 +73,8 @@ func main() {
 		r.Get("/books", bookHandler.List)
 		r.Get("/books/{id}", bookHandler.GetByID)
 		r.Get("/books/{book_id}/reviews", reviewHandler.List)
+		r.Get("/books/{id}/cover", coverHandler.GetBookCover)
+		r.Get("/books/{id}/cover/status", coverHandler.GetBookCoverStatus)
 
 		r.Group(func(r chi.Router) {
 			r.Use(handler.AuthMiddleware(authClient))
@@ -86,6 +88,7 @@ func main() {
 			r.Delete("/reviews/{id}", reviewHandler.Delete)
 
 			r.Post("/books/{id}/cover", coverHandler.UploadBookCover)
+			r.Delete("/books/{id}/cover", coverHandler.DeleteBookCover)
 		})
 	})
 
