@@ -6,8 +6,14 @@ import (
 	"bookshelf/worker-service/internal/queue"
 	"bookshelf/worker-service/internal/repository"
 	"bookshelf/worker-service/internal/storage"
+	"context"
+	"errors"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -18,40 +24,53 @@ import (
 
 func main() {
 	cfg := config.LoadConfig()
+
 	log.Println("worker-service starting...")
 
+	ctx, stop := signal.NotifyContext(
+		context.Background(),
+		os.Interrupt,
+		syscall.SIGTERM,
+	)
+	defer stop()
+
 	db, err := sqlx.Connect("postgres", cfg.DatabaseURL)
-	log.Println("Connected to database")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("connect database: %v", err)
 	}
+	log.Println("Connected to database")
 	defer db.Close()
 
 	coverRepo := repository.NewCoverRepository(db)
 
-	storage, err := storage.NewMinIOStorage(cfg.MinIOEndpoint, cfg.MinIOAccessKey, cfg.MinIOSecretKey, cfg.MinioBucket, cfg.MinIOPublicEndpoint, cfg.MinIOUseSSL)
-	log.Println("Connected to storage")
+	storageClient, err := storage.NewMinIOStorage(
+		cfg.MinIOEndpoint,
+		cfg.MinIOAccessKey,
+		cfg.MinIOSecretKey,
+		cfg.MinioBucket,
+		cfg.MinIOPublicEndpoint,
+		cfg.MinIOUseSSL,
+	)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("connect storage: %v", err)
 	}
+	log.Println("Connected to storage")
 
-	imageHandler := handler.NewImageHandler(storage, coverRepo)
+	imageHandler := handler.NewImageHandler(storageClient, coverRepo)
 
 	consumer, err := queue.NewConsumer(cfg.RabbitMQURL)
-	log.Println("Connected to rabbit")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("connect RabbitMQ: %v", err)
 	}
-	defer consumer.Close()
 
 	consumer.RegisterHandler("image_compress", imageHandler.HandleImageCompress)
 
-	log.Println("Starting consumer...")
 	if err := consumer.Start(); err != nil {
-		log.Fatal(err)
+		log.Fatalf("start consumer: %v", err)
 	}
+	log.Println("Consumer started")
 
-	healthHandler := handler.NewHealthHandler(db, "1.0.0", storage, consumer)
+	healthHandler := handler.NewHealthHandler(db, "1.0.0", storageClient, consumer)
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
@@ -68,9 +87,47 @@ func main() {
 	r.Get("/health", healthHandler.Health)
 	r.Get("/ready", healthHandler.Ready)
 
-	log.Println("Start web server")
-	err = http.ListenAndServe(cfg.Port, r)
-	if err != nil {
-		log.Fatal(err)
+	server := &http.Server{
+		Addr:    cfg.Port,
+		Handler: r,
 	}
+
+	serverErr := make(chan error, 1)
+
+	go func() {
+		log.Println("Starting web server")
+		if err := server.ListenAndServe(); err != nil &&
+			!errors.Is(err, http.ErrServerClosed) {
+			serverErr <- err
+		}
+	}()
+
+	select {
+	case <-ctx.Done():
+		log.Println("Shutdown signal received")
+	case err := <-serverErr:
+		log.Printf("HTTP server error: %v", err)
+	}
+
+	// Сначала прекращаем consumer и ждём завершения обработки.
+	log.Println("Stopping consumer...")
+	if err := consumer.Stop(); err != nil {
+		log.Printf("Stop consumer: %v", err)
+	}
+
+	// Затем останавливаем HTTP-сервер.
+	shutdownCtx, cancel := context.WithTimeout(
+		context.Background(),
+		30*time.Second,
+	)
+	defer cancel()
+
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		log.Printf("HTTP shutdown error: %v", err)
+		if closeErr := server.Close(); closeErr != nil {
+			log.Printf("HTTP close error: %v", closeErr)
+		}
+	}
+
+	log.Println("Worker-service stopped")
 }
