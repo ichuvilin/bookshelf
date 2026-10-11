@@ -36,14 +36,16 @@ type HealthHandler struct {
 	version    string
 	authClient *client.AuthClient
 	ioClient   *client.MinIOClient
+	mq         *client.RabbitMQClient
 }
 
-func NewHealthHandler(db *sqlx.DB, version string, authClient *client.AuthClient, ioClient *client.MinIOClient) *HealthHandler {
+func NewHealthHandler(db *sqlx.DB, version string, authClient *client.AuthClient, ioClient *client.MinIOClient, mq *client.RabbitMQClient) *HealthHandler {
 	return &HealthHandler{
 		db:         db,
 		version:    version,
 		authClient: authClient,
 		ioClient:   ioClient,
+		mq:         mq,
 	}
 }
 
@@ -51,6 +53,7 @@ func (h *HealthHandler) Health(w http.ResponseWriter, r *http.Request) {
 	checks := map[string]Check{
 		"database": h.checkDatabase(),
 		"minio":    h.checkIO(),
+		"rabbitmq": h.checkMq(),
 	}
 
 	status := "ok"
@@ -92,6 +95,11 @@ func (h *HealthHandler) Ready(w http.ResponseWriter, r *http.Request) {
 
 	checks["io"] = h.checkIO()
 	if checks["io"].Status != "ok" {
+		allReady = false
+	}
+
+	checks["rabbitmq"] = h.checkMq()
+	if checks["rabbitmq"].Status != "ok" {
 		allReady = false
 	}
 
@@ -185,6 +193,27 @@ func (h *HealthHandler) checkIO() Check {
 	defer cancel()
 
 	err := h.ioClient.HealthCheck(ctx)
+
+	duration := time.Since(start).String()
+
+	if err != nil {
+		return Check{
+			Status:   "error",
+			Duration: duration,
+			Error:    err.Error(),
+		}
+	}
+
+	return Check{
+		Status:   "ok",
+		Duration: duration,
+	}
+}
+
+func (h *HealthHandler) checkMq() Check {
+	start := time.Now()
+
+	err := h.mq.HealthCheck()
 
 	duration := time.Since(start).String()
 

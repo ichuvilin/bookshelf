@@ -51,7 +51,7 @@ func main() {
 
 	bookHandler := handler.NewBookHandler(bookSvc)
 	reviewHandler := handler.NewReviewHandler(reviewSvc)
-	healthHandler := handler.NewHealthHandler(db, "1.0.0", authClient, ioClient)
+	healthHandler := handler.NewHealthHandler(db, "1.0.0", authClient, ioClient, rabbit)
 	coverHandler := handler.NewCoverHandler(coverSvc)
 
 	r := chi.NewRouter()

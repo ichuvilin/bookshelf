@@ -1,11 +1,13 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 )
 
 type Config struct {
+	Port                string
 	RabbitMQURL         string // URL для подключения к RabbitMQ
 	MinIOEndpoint       string // URL для подключения к MinIO
 	MinIOAccessKey      string // Access key для MinIO
@@ -17,6 +19,11 @@ type Config struct {
 }
 
 func LoadConfig() *Config {
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8083"
+	}
+
 	mqurl := os.Getenv("RABBIT_MQURL")
 	if mqurl == "" {
 		mqurl = "amqp://guest:guest@localhost:5672/"
@@ -59,6 +66,7 @@ func LoadConfig() *Config {
 	}
 
 	return &Config{
+		Port:                fmt.Sprintf(":%s", port),
 		RabbitMQURL:         mqurl,
 		DatabaseURL:         dbURL,
 		MinIOEndpoint:       minioEndpoint,

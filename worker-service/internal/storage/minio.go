@@ -117,3 +117,11 @@ func (s *MinIOStorage) GetFileURL(objectName string) string {
 		strings.TrimLeft(objectName, "/"),
 	)
 }
+
+func (c *MinIOStorage) HealthCheck(ctx context.Context) error {
+	if _, err := c.client.BucketExists(ctx, c.bucket); err != nil {
+		return fmt.Errorf("MinIO health check: %w", err)
+	}
+
+	return nil
+}
