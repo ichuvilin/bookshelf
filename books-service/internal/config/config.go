@@ -12,6 +12,7 @@ type Config struct {
 	DatabaseURL         string
 	AuthServiceURL      string
 	ServiceKey          string
+	RabbitMQURL         string // URL для подключения к RabbitMQ
 	AuthServiceTimeout  time.Duration
 	AuthServiceRetries  int
 	MinIOEndpoint       string // localhost:9000
@@ -31,7 +32,10 @@ func Load() *Config {
 	if dbUrl == "" {
 		dbUrl = "postgres://postgres:postgres@localhost:5433/books?sslmode=disable"
 	}
-
+	mqurl := os.Getenv("RABBIT_MQURL")
+	if mqurl == "" {
+		mqurl = "amqp://guest:guest@localhost:5672/"
+	}
 	authServiceURL := os.Getenv("AUTH_SERVICE_URL")
 	if authServiceURL == "" {
 		authServiceURL = "http://localhost:8081"

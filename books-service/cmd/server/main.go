@@ -28,7 +28,7 @@ func main() {
 
 	log.Println("Connected to database")
 
-	rabbit, err := client.NewRabbitMQClient("amqp://guest:guest@localhost:5672/")
+	rabbit, err := client.NewRabbitMQClient(cfg.RabbitMQURL)
 	if err != nil {
 		log.Fatal(err)
 	}

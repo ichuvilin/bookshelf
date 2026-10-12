@@ -82,6 +82,86 @@ services:
       books-postgres:
         condition: service_healthy
 
+  # Auth Service
+  auth-service:
+    build: ./auth-service
+    ports:
+      - "8081:8081"
+    environment:
+      PORT: 8081
+      DATABASE_URL: postgres://postgres:postgres@auth-postgres:5432/auth?sslmode=disable
+      SERVICE_KEY: dev-service-key
+    depends_on:
+      auth-postgres:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # Books Service
+  books-service:
+    build: ./books-service
+    ports:
+      - "8082:8082"
+    environment:
+      PORT: 8082
+      DATABASE_URL: postgres://postgres:postgres@books-postgres:5432/books?sslmode=disable
+      AUTH_SERVICE_URL: http://auth-service:8081
+      SERVICE_KEY: dev-service-key
+      RABBIT_MQURL: amqp://guest:guest@rabbitmq:5672/
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET: bookshelf-covers
+      MINIO_PUBLIC_ENDPOINT: http://localhost:9000
+      MINIO_USE_SSL: false
+    depends_on:
+      books-postgres:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8082/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  worker-service:
+    build: ./worker-service
+    ports:
+      - "8083:8083"
+    environment:
+      PORT: 8083
+      DATABASE_URL: postgres://postgres:postgres@books-postgres:5432/books?sslmode=disable
+      RABBIT_MQURL: amqp://guest:guest@rabbitmq:5672/
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET: bookshelf-covers
+      MINIO_PUBLIC_ENDPOINT: http://localhost:9000
+      MINIO_USE_SSL: false
+    depends_on:
+      books-postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8083/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
 volumes:
   auth_postgres_data:
   books_postgres_data:
