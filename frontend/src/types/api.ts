@@ -1,4 +1,4 @@
-// Types based on OpenAPI spec: project3-books-service-openapi.yaml
+// Types based on OpenAPI spec: project4-api-gateway-openapi.yaml
 
 // ==================== AUTH ====================
 export interface RegisterRequest {
@@ -58,9 +58,17 @@ export interface Book {
   created_by: string;
   created_at: string;
   updated_at: string;
-  // Project 3: Cover fields
   cover_url?: string | null;
   cover_status: CoverStatus;
+}
+
+export interface BookSummary {
+  id: string;
+  title: string;
+  author: string;
+  average_rating: number | null;
+  reviews_count: number;
+  cover_url?: string | null;
 }
 
 export interface BookDetails extends Book {
@@ -124,6 +132,16 @@ export interface Review {
   updated_at: string;
 }
 
+export interface ReviewSummary {
+  id: string;
+  book_id: string;
+  book_title: string;
+  user: ReviewAuthor;
+  rating: number;
+  title?: string;
+  created_at: string;
+}
+
 export interface ReviewAuthor {
   id: string;
   username: string;
@@ -144,6 +162,24 @@ export interface UpdateReviewRequest {
 export interface ReviewListResponse {
   data: Review[];
   pagination: Pagination;
+}
+
+// ==================== DASHBOARD ====================
+export interface DashboardResponse {
+  popular_books: BookSummary[];
+  recent_reviews: ReviewSummary[];
+  user_stats?: UserStats;
+}
+
+export interface UserStats {
+  books_added: number;
+  reviews_written: number;
+}
+
+// ==================== SEARCH ====================
+export interface SearchResponse {
+  books: BookSummary[];
+  total: number;
 }
 
 // ==================== COMMON ====================
@@ -173,6 +209,13 @@ export interface HealthResponse {
   checks?: Record<string, string>;
 }
 
+// ==================== RATE LIMIT ====================
+export interface RateLimitInfo {
+  limit: number;
+  remaining: number;
+  reset: number;
+}
+
 // ==================== QUERY PARAMS ====================
 export interface BooksParams {
   page?: number;
@@ -191,4 +234,9 @@ export interface ReviewsParams {
   limit?: number;
   sort?: 'created_at' | 'rating';
   order?: 'asc' | 'desc';
+}
+
+export interface SearchParams {
+  q: string;
+  limit?: number;
 }

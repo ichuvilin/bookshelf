@@ -7,16 +7,14 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install
+RUN npm i
 
 # Copy source files
 COPY . .
 
 # Build arguments for environment variables
-ARG VITE_AUTH_URL=http://localhost:8081
-ARG VITE_BOOKS_URL=http://localhost:8082
-ENV VITE_AUTH_URL=$VITE_AUTH_URL
-ENV VITE_BOOKS_URL=$VITE_BOOKS_URL
+ARG VITE_GATEWAY_URL=http://localhost:8000
+ENV VITE_GATEWAY_URL=$VITE_GATEWAY_URL
 
 # Build the application
 RUN npm run build
