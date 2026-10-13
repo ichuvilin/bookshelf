@@ -29,6 +29,9 @@ func Load() *Config {
 	}
 
 	redisURL := os.Getenv("REDIS_URL")
+	if redisURL == "" {
+		redisURL = "redis://localhost:6379"
+	}
 
 	return &Config{
 		Port:            fmt.Sprintf(":%s", port),

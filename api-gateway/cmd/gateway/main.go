@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bookshelf/api-gateway/internal/cache"
 	"bookshelf/api-gateway/internal/config"
 	"bookshelf/api-gateway/internal/handler"
 	m "bookshelf/api-gateway/internal/middleware"
@@ -21,6 +22,13 @@ func main() {
 	cfg := config.Load()
 
 	logger.Info("Config loaded")
+
+	c, err := cache.New(cfg.RedisURL)
+	if err != nil {
+		logger.Error("error during connection to redis", err)
+		os.Exit(0)
+	}
+	defer c.Close()
 
 	serviceProxy := proxy.New(cfg.AuthServiceURL, cfg.BooksServiceURL)
 
