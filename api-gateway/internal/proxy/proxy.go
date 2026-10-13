@@ -1,11 +1,16 @@
 package proxy
 
 import (
+	"context"
+	"encoding/json"
+	"errors"
 	"io"
 	"log"
+	"log/slog"
 	"net"
 	"net/http"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -36,6 +41,8 @@ func (p *ServiceProxy) ProxyRequest(w http.ResponseWriter, r *http.Request, targ
 		http.Error(w, "Failed to create proxy request", http.StatusInternalServerError)
 		return
 	}
+	requestID := r.Header.Get("X-Request-ID")
+
 	req.Header = r.Header.Clone()
 
 	clientIP := r.RemoteAddr
@@ -61,8 +68,57 @@ func (p *ServiceProxy) ProxyRequest(w http.ResponseWriter, r *http.Request, targ
 
 	resp, err := p.client.Do(req)
 	if err != nil {
-		log.Printf("Proxy request failed: %v", err)
-		http.Error(w, "Backend service unavailable", http.StatusBadGateway)
+		var netErr net.Error
+
+		switch {
+		case errors.Is(err, context.DeadlineExceeded),
+			errors.As(err, &netErr) && netErr.Timeout():
+
+			slog.Error("proxy request timeout",
+				"target", targetURL,
+				"error_type", "timeout",
+				"error", err,
+			)
+
+			writeError(
+				w,
+				http.StatusGatewayTimeout,
+				"GATEWAY_TIMEOUT",
+				"Backend service timed out",
+				requestID,
+			)
+
+		case isConnectionRefused(err):
+			slog.Error("proxy connection refused",
+				"target", targetURL,
+				"error_type", "connection_refused",
+				"error", err,
+			)
+
+			writeError(
+				w,
+				http.StatusBadGateway,
+				"BAD_GATEWAY",
+				"Backend service unavailable",
+				requestID,
+			)
+
+		default:
+			slog.Error("proxy request failed",
+				"target", targetURL,
+				"error_type", "other",
+				"error", err,
+			)
+
+			writeError(
+				w,
+				http.StatusBadGateway,
+				"BAD_GATEWAY",
+				"Backend service unavailable",
+				requestID,
+			)
+		}
+
 		return
 	}
 	defer resp.Body.Close()
@@ -123,4 +179,35 @@ func getClientIP(r *http.Request) string {
 
 	// RemoteAddr может быть без порта, например в тестах.
 	return strings.Trim(r.RemoteAddr, "[]")
+}
+
+func writeError(
+	w http.ResponseWriter,
+	status int,
+	code string,
+	message string,
+	requestID string,
+) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+
+	if err := json.NewEncoder(w).Encode(map[string]string{
+		"code":       code,
+		"message":    message,
+		"request_id": requestID,
+	}); err != nil {
+		slog.Error("failed to encode error response",
+			"request_id", requestID,
+			"error", err,
+		)
+	}
+}
+
+func isConnectionRefused(err error) bool {
+	var opErr *net.OpError
+	if !errors.As(err, &opErr) {
+		return false
+	}
+
+	return errors.Is(opErr.Err, syscall.ECONNREFUSED)
 }
