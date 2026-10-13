@@ -3,7 +3,9 @@ package proxy
 import (
 	"io"
 	"log"
+	"net"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -35,6 +37,27 @@ func (p *ServiceProxy) ProxyRequest(w http.ResponseWriter, r *http.Request, targ
 		return
 	}
 	req.Header = r.Header.Clone()
+
+	clientIP := r.RemoteAddr
+	if host, _, err := net.SplitHostPort(clientIP); err == nil {
+		clientIP = host
+	}
+
+	if forwardedFor := r.Header.Get("X-Forwarded-For"); forwardedFor != "" {
+		req.Header.Set("X-Forwarded-For", forwardedFor+", "+clientIP)
+	} else {
+		req.Header.Set("X-Forwarded-For", clientIP)
+	}
+
+	if req.Header.Get("X-Real-IP") == "" {
+		req.Header.Set("X-Real-IP", getClientIP(r))
+	}
+
+	if r.TLS != nil {
+		req.Header.Set("X-Forwarded-Proto", "https")
+	} else {
+		req.Header.Set("X-Forwarded-Proto", "http")
+	}
 
 	resp, err := p.client.Do(req)
 	if err != nil {
@@ -75,4 +98,29 @@ func (p *ServiceProxy) ProxyToBooks(w http.ResponseWriter, r *http.Request, path
 	}
 
 	p.ProxyRequest(w, r, targetURL)
+}
+
+// getClientIP возвращает IP клиента.
+// Приоритет: X-Forwarded-For, X-Real-IP, RemoteAddr.
+func getClientIP(r *http.Request) string {
+	// X-Forwarded-For может содержать цепочку IP.
+	if forwardedFor := r.Header.Get("X-Forwarded-For"); forwardedFor != "" {
+		if ip := strings.TrimSpace(strings.Split(forwardedFor, ",")[0]); ip != "" {
+			return ip
+		}
+	}
+
+	// Если X-Forwarded-For отсутствует, проверяем X-Real-IP.
+	if realIP := strings.TrimSpace(r.Header.Get("X-Real-IP")); realIP != "" {
+		return realIP
+	}
+
+	// Последний вариант — адрес TCP-клиента.
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err == nil {
+		return host
+	}
+
+	// RemoteAddr может быть без порта, например в тестах.
+	return strings.Trim(r.RemoteAddr, "[]")
 }
