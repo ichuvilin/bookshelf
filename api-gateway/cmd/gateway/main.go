@@ -3,6 +3,7 @@ package main
 import (
 	"bookshelf/api-gateway/internal/config"
 	"bookshelf/api-gateway/internal/handler"
+	m "bookshelf/api-gateway/internal/middleware"
 	"bookshelf/api-gateway/internal/proxy"
 	"encoding/json"
 	"log"
@@ -25,6 +26,8 @@ func main() {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+	r.Use(m.RequestID)
+
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:5174"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
