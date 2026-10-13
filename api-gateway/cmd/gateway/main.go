@@ -32,10 +32,15 @@ func main() {
 	}
 	defer c.Close()
 
-	_ = ratelimit.New(
+	rl := ratelimit.New(
 		c.GetClient(),
 		time.Duration(cfg.RateLimitWindow)*time.Second,
 	)
+
+	rlConfig := &m.RateLimitConfig{
+		Limiter: rl,
+		Limit:   100,
+	}
 
 	serviceProxy := proxy.New(cfg.AuthServiceURL, cfg.BooksServiceURL)
 
@@ -48,6 +53,7 @@ func main() {
 	r.Use(middleware.Recoverer)
 	r.Use(m.RequestID)
 	r.Use(m.Logging)
+	r.Use(m.RateLimitMiddleware(rlConfig))
 
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		if err := json.NewEncoder(w).Encode(map[string]string{
