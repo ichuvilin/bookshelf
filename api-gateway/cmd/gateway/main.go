@@ -38,8 +38,10 @@ func main() {
 	)
 
 	rlConfig := &m.RateLimitConfig{
-		Limiter: rl,
-		Limit:   100,
+		Limiter:         rl,
+		AnonymousLimit:  100,
+		AuthorizedLimit: 1000,
+		UploadLimit:     10,
 	}
 
 	serviceProxy := proxy.New(cfg.AuthServiceURL, cfg.BooksServiceURL)
