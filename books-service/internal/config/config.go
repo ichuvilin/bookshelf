@@ -96,6 +96,7 @@ func Load() *Config {
 		Port:                fmt.Sprintf(":%s", port),
 		DatabaseURL:         dbUrl,
 		AuthServiceURL:      authServiceURL,
+		RabbitMQURL:         mqurl,
 		ServiceKey:          svcKey,
 		AuthServiceTimeout:  authServiceTimeout,
 		AuthServiceRetries:  authServiceRetries,
