@@ -9,6 +9,7 @@ type Config struct {
 	Port            string
 	AuthServiceURL  string
 	BooksServiceURL string
+	RedisURL        string
 }
 
 func Load() *Config {
@@ -27,9 +28,12 @@ func Load() *Config {
 		bookSvcUrl = "http://localhost:8082"
 	}
 
+	redisURL := os.Getenv("REDIS_URL")
+
 	return &Config{
 		Port:            fmt.Sprintf(":%s", port),
 		AuthServiceURL:  authSvcUrl,
 		BooksServiceURL: bookSvcUrl,
+		RedisURL:        redisURL,
 	}
 }
