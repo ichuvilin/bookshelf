@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"bookshelf/api-gateway/internal/domain"
 	"context"
 	"encoding/json"
 	"errors"
@@ -83,9 +84,11 @@ func (p *ServiceProxy) ProxyRequest(w http.ResponseWriter, r *http.Request, targ
 			writeError(
 				w,
 				http.StatusGatewayTimeout,
-				"GATEWAY_TIMEOUT",
-				"Backend service timed out",
-				requestID,
+				domain.ErrorResponse{
+					Code:      "GATEWAY_TIMEOUT",
+					Message:   "Backend service timed out",
+					RequestID: requestID,
+				},
 			)
 
 		case isConnectionRefused(err):
@@ -98,9 +101,11 @@ func (p *ServiceProxy) ProxyRequest(w http.ResponseWriter, r *http.Request, targ
 			writeError(
 				w,
 				http.StatusBadGateway,
-				"BAD_GATEWAY",
-				"Backend service unavailable",
-				requestID,
+				domain.ErrorResponse{
+					Code:      "BAD_GATEWAY",
+					Message:   "Backend service unavailable",
+					RequestID: requestID,
+				},
 			)
 
 		default:
@@ -113,9 +118,11 @@ func (p *ServiceProxy) ProxyRequest(w http.ResponseWriter, r *http.Request, targ
 			writeError(
 				w,
 				http.StatusBadGateway,
-				"BAD_GATEWAY",
-				"Backend service unavailable",
-				requestID,
+				domain.ErrorResponse{
+					Code:      "BAD_GATEWAY",
+					Message:   "Backend service unavailable",
+					RequestID: requestID,
+				},
 			)
 		}
 
@@ -184,20 +191,14 @@ func getClientIP(r *http.Request) string {
 func writeError(
 	w http.ResponseWriter,
 	status int,
-	code string,
-	message string,
-	requestID string,
+	error domain.ErrorResponse,
 ) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 
-	if err := json.NewEncoder(w).Encode(map[string]string{
-		"code":       code,
-		"message":    message,
-		"request_id": requestID,
-	}); err != nil {
+	if err := json.NewEncoder(w).Encode(error); err != nil {
 		slog.Error("failed to encode error response",
-			"request_id", requestID,
+			"request_id", error.RequestID,
 			"error", err,
 		)
 	}
