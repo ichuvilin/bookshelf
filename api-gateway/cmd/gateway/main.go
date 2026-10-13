@@ -28,8 +28,16 @@ func main() {
 		}
 	})
 
-	r.Post("/test", func(w http.ResponseWriter, r *http.Request) {
-		serviceProxy.ProxyRequest(w, r, cfg.AuthServiceURL+"/api/v1/auth/login")
+	r.Route("/api/v1", func(r chi.Router) {
+		r.Handle("/auth/*", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			serviceProxy.ProxyToAuth(w, r, r.URL.Path)
+		}))
+		r.Handle("/users/*", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			serviceProxy.ProxyToAuth(w, r, r.URL.Path)
+		}))
+		r.Handle("/books/*", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			serviceProxy.ProxyToBooks(w, r, r.URL.Path)
+		}))
 	})
 
 	if err := http.ListenAndServe(cfg.Port, r); err != nil {

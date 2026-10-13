@@ -56,3 +56,23 @@ func (p *ServiceProxy) ProxyRequest(w http.ResponseWriter, r *http.Request, targ
 		log.Printf("Failed to copy proxy response body: %v", err)
 	}
 }
+
+func (p *ServiceProxy) ProxyToAuth(w http.ResponseWriter, r *http.Request, path string) {
+	targetURL := p.authServiceURL + path
+
+	if r.URL.RawQuery != "" {
+		targetURL += "?" + r.URL.RawQuery
+	}
+
+	p.ProxyRequest(w, r, targetURL)
+}
+
+func (p *ServiceProxy) ProxyToBooks(w http.ResponseWriter, r *http.Request, path string) {
+	targetURL := p.booksServiceURL + path
+
+	if r.URL.RawQuery != "" {
+		targetURL += "?" + r.URL.RawQuery
+	}
+
+	p.ProxyRequest(w, r, targetURL)
+}
