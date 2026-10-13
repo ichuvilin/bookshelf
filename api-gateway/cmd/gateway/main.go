@@ -2,6 +2,7 @@ package main
 
 import (
 	"bookshelf/api-gateway/internal/config"
+	"bookshelf/api-gateway/internal/proxy"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -13,6 +14,8 @@ import (
 func main() {
 	cfg := config.Load()
 
+	serviceProxy := proxy.New(cfg.AuthServiceURL, cfg.BooksServiceURL)
+
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
@@ -23,6 +26,10 @@ func main() {
 		}); err != nil {
 			return
 		}
+	})
+
+	r.Post("/test", func(w http.ResponseWriter, r *http.Request) {
+		serviceProxy.ProxyRequest(w, r, cfg.AuthServiceURL+"/api/v1/auth/login")
 	})
 
 	if err := http.ListenAndServe(cfg.Port, r); err != nil {
