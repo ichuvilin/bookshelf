@@ -6,8 +6,9 @@ import (
 	m "bookshelf/api-gateway/internal/middleware"
 	"bookshelf/api-gateway/internal/proxy"
 	"encoding/json"
-	"log"
+	"log/slog"
 	"net/http"
+	"os"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -15,7 +16,12 @@ import (
 )
 
 func main() {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	slog.SetDefault(logger)
+
 	cfg := config.Load()
+
+	logger.Info("Config loaded")
 
 	serviceProxy := proxy.New(cfg.AuthServiceURL, cfg.BooksServiceURL)
 
@@ -24,9 +30,9 @@ func main() {
 	reviewsHandler := handler.NewReviewsHandler(serviceProxy)
 
 	r := chi.NewRouter()
-	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(m.RequestID)
+	r.Use(m.Logging)
 
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:5174"},
@@ -73,8 +79,8 @@ func main() {
 		r.Delete("/books/{bookId}/reviews/{reviewId}", reviewsHandler.DeleteReview)
 	})
 
-	log.Println("API Gateway listening on :8000")
+	logger.Info("API Gateway listening on :8000")
 	if err := http.ListenAndServe(cfg.Port, r); err != nil {
-		log.Fatal("Failed started api gateway", err)
+		logger.Error("Failed started api gateway", err)
 	}
 }
