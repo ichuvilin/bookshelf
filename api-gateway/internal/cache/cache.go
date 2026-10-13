@@ -44,6 +44,10 @@ func (c *Cache) Delete(ctx context.Context, key string) {
 	c.client.Del(ctx, key)
 }
 
+func (c *Cache) GetClient() *redis.Client {
+	return c.client
+}
+
 func (c *Cache) Close() error {
 	return c.client.Close()
 }

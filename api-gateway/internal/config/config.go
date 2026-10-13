@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strconv"
 )
 
 type Config struct {
@@ -10,6 +11,7 @@ type Config struct {
 	AuthServiceURL  string
 	BooksServiceURL string
 	RedisURL        string
+	RateLimitWindow int
 }
 
 func Load() *Config {
@@ -33,10 +35,18 @@ func Load() *Config {
 		redisURL = "redis://localhost:6379"
 	}
 
+	rateLimitWindow := 60
+	if value := os.Getenv("RATE_LIMIT_WINDOW"); value != "" {
+		if parsed, err := strconv.Atoi(value); err == nil && parsed > 0 {
+			rateLimitWindow = parsed
+		}
+	}
+
 	return &Config{
 		Port:            fmt.Sprintf(":%s", port),
 		AuthServiceURL:  authSvcUrl,
 		BooksServiceURL: bookSvcUrl,
 		RedisURL:        redisURL,
+		RateLimitWindow: rateLimitWindow,
 	}
 }

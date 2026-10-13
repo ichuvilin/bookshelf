@@ -6,10 +6,12 @@ import (
 	"bookshelf/api-gateway/internal/handler"
 	m "bookshelf/api-gateway/internal/middleware"
 	"bookshelf/api-gateway/internal/proxy"
+	"bookshelf/api-gateway/internal/ratelimit"
 	"encoding/json"
 	"log/slog"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -29,6 +31,11 @@ func main() {
 		os.Exit(0)
 	}
 	defer c.Close()
+
+	_ = ratelimit.New(
+		c.GetClient(),
+		time.Duration(cfg.RateLimitWindow)*time.Second,
+	)
 
 	serviceProxy := proxy.New(cfg.AuthServiceURL, cfg.BooksServiceURL)
 
