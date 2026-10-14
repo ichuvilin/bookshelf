@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -11,6 +12,12 @@ import (
 
 type Cache struct {
 	client *redis.Client
+}
+
+type CachedResponse struct {
+	StatusCode int               `json:"status_code"`
+	Headers    map[string]string `json:"headers"`
+	Body       json.RawMessage   `json:"body"`
 }
 
 func New(redisURL string) (*Cache, error) {
