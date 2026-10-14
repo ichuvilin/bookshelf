@@ -56,6 +56,11 @@ func main() {
 	r.Use(m.RequestID)
 	r.Use(m.Logging)
 	r.Use(m.RateLimitMiddleware(rlConfig))
+	r.Use(m.CacheMiddleware(&m.CacheConfig{
+		Cache:     c,
+		TTL:       5 * time.Minute,
+		KeyPrefix: "books",
+	}))
 
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		if err := json.NewEncoder(w).Encode(map[string]string{

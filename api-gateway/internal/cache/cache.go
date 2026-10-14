@@ -2,6 +2,8 @@ package cache
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -46,6 +48,18 @@ func (c *Cache) Delete(ctx context.Context, key string) {
 
 func (c *Cache) GetClient() *redis.Client {
 	return c.client
+}
+
+func GenerateKey(prefix, path, query string) string {
+	raw := path
+	if query != "" {
+		raw += "?" + query
+	}
+
+	sum := sha256.Sum256([]byte(raw))
+	hash := hex.EncodeToString(sum[:])[:16]
+
+	return prefix + ":" + hash
 }
 
 func (c *Cache) Close() error {
